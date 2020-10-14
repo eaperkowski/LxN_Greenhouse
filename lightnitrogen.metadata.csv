@@ -1,0 +1,15 @@
+﻿var,description,units
+block,block number,NA
+spp,species,NA
+n.ppm,nitrogen fertilization (added twice per week),ppm N
+shade.cover,light availability ,%
+stem.wt,stem mass,g
+leaves.wt,leaf mass,g
+roots.wt,root mass,g
+nod.wt,nodule mass,g
+n.root,root nitrogen content,g g-1 (%)
+c.root,root carbon content,g g-1 (%)
+n.stem,stem nitrogen content,g g-1 (%)
+c.stem,stem carbon content,g g-1 (%)
+n.leaf,leaf nitrogen content,g g-1 (%)
+c.leaf,leaf carbon content,g g-1 (%)
