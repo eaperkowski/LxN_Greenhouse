@@ -1,11 +1,8 @@
 ## Libraries
 library(dplyr)
 
-## Set working directory
-setwd("/Users/eaperkowski/git/LxN_Greenhouse/")
-
 ## Load light.nitrogen.datasheet
-df <- read.csv("./lightnitrogen.datasheet.csv",
+df <- read.csv("https://raw.githubusercontent.com/eaperkowski/LxN_Greenhouse/main/data_sheets/lightnitrogen.datasheet.csv",
                stringsAsFactors = FALSE,
                na.strings = c("", "NA"))
 
