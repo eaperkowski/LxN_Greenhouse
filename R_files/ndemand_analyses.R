@@ -111,7 +111,7 @@ soy.df$nod.wt[soy.df$nod.wt == 0] <- NA
 nod.wgt <- lmer(log(nod.wt) ~ shade.cover * n.ppm + (1 | block), 
                 data = soy.df)
 
-# Check ormality assumptions
+# Check normality assumptions
 plot(nod.wgt)
 qqnorm(residuals(nod.wgt))
 qqline(residuals(nod.wgt))
