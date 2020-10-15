@@ -53,8 +53,8 @@ Anova(ncost)
 # Pairwise comparisons
 emmeans(ncost, pairwise ~ shade.cover | n.ppm | spp)
 emmeans(ncost, pairwise ~ n.ppm | shade.cover | spp)
-emmeans(n.acq, pairwise ~ shade.cover | spp)
-emmeans(n.acq, pairwise ~ n.ppm | spp)
+emmeans(n.acq, pairwise ~ shade.cover | spp) # NGS: n.acq not yet created
+emmeans(n.acq, pairwise ~ n.ppm | spp) # NGS: n.acq not yet created
 emmeans(ncost, pairwise ~ spp | n.ppm)
 
 ###########################################################
@@ -125,3 +125,4 @@ emmeans(nod.wgt, pairwise ~ shade.cover | n.ppm)
 emmeans(nod.wgt, pairwise ~ shade.cover)
 emmeans(nod.wgt, pairwise ~ n.ppm)
 emmeans(nod.wgt, pairwise ~ n.ppm | shade.cover)
+
