@@ -53,8 +53,8 @@ Anova(ncost)
 # Pairwise comparisons
 emmeans(ncost, pairwise ~ shade.cover | n.ppm | spp)
 emmeans(ncost, pairwise ~ n.ppm | shade.cover | spp)
-emmeans(n.acq, pairwise ~ shade.cover | spp) # NGS: n.acq not yet created
-emmeans(n.acq, pairwise ~ n.ppm | spp) # NGS: n.acq not yet created
+emmeans(ncost, pairwise ~ shade.cover | spp)
+emmeans(ncost, pairwise ~ n.ppm | spp)
 emmeans(ncost, pairwise ~ spp | n.ppm)
 
 ###########################################################
@@ -100,7 +100,7 @@ emmeans(root.carbon, pairwise ~ shade.cover | spp)
 emmeans(root.carbon, pairwise ~ n.ppm | spp)
 
 ###########################################################
-# Root nodule weight
+# Root nodule weight (g)
 ###########################################################
 ## NOTE: Mixed effect model does not contain species term
 ## because cotton is not capable of forming root nodules.
