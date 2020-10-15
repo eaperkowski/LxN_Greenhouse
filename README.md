@@ -6,3 +6,6 @@ Currently, this repository contains data relevant to the Perkowski et al. (in pr
 The data frame created from `create_ndemand_metrics.R` is directly loaded into a data analysis R file, which can be found in the `ndemand_analyses.R` file. This data frame is also directly loaded into a file containing manuscript plot code, which can be found in the `ndemand_plots.R` file. Both the `ndemand_analyses.R` and `ndemand_plots.R` files can be accessed in the `R_files` folder.
 
 NOTE: This repository will be updated with data and metadata from Waring & Smith (in prep) and will be released as a second version on Zenodo.
+
+## Zenodo DOI
+[![DOI](https://zenodo.org/badge/304118064.svg)](https://zenodo.org/badge/latestdoi/304118064)
