@@ -3,6 +3,6 @@ Repository for data collected and R scripts created from a light-by-nitrogen gre
 
 Currently, this repository contains data relevant to the Perkowski et al. (in prep) manuscript. Data and associated metadata .csv files can be located in the `data_sheets` folder. This data sheet does not include the direct metrics used in the Perkowski et al. (in prep) manuscript; however, calculations for these metrics can be found in the `create_ndemand_metrics.R` file located in the `R_files` folder.
 
-The data frame created from `create_ndemand_metrics.R` is directly loaded into a data analysis R file, which can be found in the `ndemand_analyses.R` file of the same `R_files` folder.
+The data frame created from `create_ndemand_metrics.R` is directly loaded into a data analysis R file, which can be found in the `ndemand_analyses.R` file. This data frame is also directly loaded into a file containing manuscript plot code, which can be found in the `ndemand_plots.R` file. Both the `ndemand_analyses.R` and `ndemand_plots.R` files can be accessed in the `R_files` folder.
 
 NOTE: This repository will be updated with data and metadata from Waring & Smith (in prep) and will be released as a second version on Zenodo.
