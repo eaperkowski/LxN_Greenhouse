@@ -4,6 +4,8 @@
 library(lme4)
 library(car)
 library(emmeans)
+library(MuMIn)
+library(ggplot2)
 
 ###########################################################
 # Load data frame produced by "create_ndemand_metrics.R"
@@ -11,20 +13,11 @@ library(emmeans)
 source("https://raw.githubusercontent.com/eaperkowski/LxN_Greenhouse/main/R_files/create_ndemand_metrics.R")
 
 ###########################################################
-# Create categorical fixed effects
-###########################################################
-df$n.ppm <- as.factor(df$n.ppm)
-df$shade.cover <- as.factor(df$shade.cover)
-df$spp <- as.factor(df$spp)
-
-###########################################################
 # Mixed effect model structure
 ###########################################################
 #   Fixed  effects:
-#     - spp           - 2 levels (cotton, soybean)
-#     - shade.cover   - 4 levels (0%, 30%, 50%, 80% shadecover)
-#     - n.ppm         - 4 levels (0, 70, 210, 630 ppm N added
-#                       twice per week)
+#     - shade.cover   - continuous
+#     - n.ppm         - continuous
 #
 #   Random effects:
 #     - block         - three blocks
@@ -36,93 +29,257 @@ df$spp <- as.factor(df$spp)
 #     - nod.wgt       - root nodule weight
 
 ###########################################################
-# Carbon cost to acquire nitrogen (g C g-1 N)
+# Carbon cost to acquire nitrogen (g C g-1 N) - G. max
 ###########################################################
-ncost <- lmer(log(n.cost) ~ spp * shade.cover * n.ppm + (1 | block), 
-              data = df)
+df$n.cost[c(87, 321)] <- NA
+
+ncost.soy <- lmer(log(n.cost) ~ shade.cover * n.ppm + (1 | block), 
+                   data = subset(df, spp == "Soybean"))
 
 # Check normality assumptions
-plot(ncost)
-qqnorm(residuals(ncost))
-qqline(residuals(ncost))
+plot(ncost.soy)
+qqnorm(residuals(ncost.soy))
+qqline(residuals(ncost.soy))
+shapiro.test(residuals(ncost.soy))
+outlierTest(ncost.soy)
 
 # Model results
-summary(ncost)
-Anova(ncost)
+summary(ncost.soy)
+Anova(ncost.soy)
+r.squaredGLMM(ncost.soy)
 
-# Pairwise comparisons
-emmeans(ncost, pairwise ~ shade.cover | n.ppm | spp)
-emmeans(ncost, pairwise ~ n.ppm | shade.cover | spp)
-emmeans(ncost, pairwise ~ shade.cover | spp)
-emmeans(ncost, pairwise ~ n.ppm | spp)
-emmeans(ncost, pairwise ~ spp | n.ppm)
+# Post-hoc analyses
+test(emtrends(ncost.soy, ~shade.cover,
+              var = "n.ppm",
+              at = list(shade.cover = c(0, 30, 50, 80)),
+              options = list(),
+              transform = "response"))
+emmeans(ncost.soy, ~n.ppm * shade.cover,
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)),
+        transform = "response")
 
 ###########################################################
-# Whole plant nitrogen mass (g N)
+# Carbon cost to acquire nitrogen (g C g-1 N) - G. hirsutum
 ###########################################################
-n.acq <- lmer(log(n.acq) ~ spp * shade.cover * n.ppm + (1 | block), 
-              data = df)
+df$n.cost[c(44, 275, 279, 337)] <- NA
+
+ncost.cotton <- lmer(log(n.cost) ~ shade.cover * n.ppm + (1 | block), 
+                  data = subset(df, spp == "Cotton"))
 
 # Check normality assumptions
-plot(n.acq)
-qqnorm(residuals(n.acq))
-qqline(residuals(n.acq))
+plot(ncost.cotton)
+qqnorm(residuals(ncost.cotton))
+qqline(residuals(ncost.cotton))
+shapiro.test(residuals(ncost.cotton))
+outlierTest(ncost.cotton)
 
 # Model results
-summary(n.acq)
-Anova(n.acq)
+summary(ncost.cotton)
+Anova(ncost.cotton)
+r.squaredGLMM(ncost.cotton)
 
 # Pairwise comparisons
-emmeans(n.acq, pairwise ~ n.ppm | shade.cover | spp)
-emmeans(n.acq, pairwise ~ shade.cover | n.ppm | spp)
-emmeans(n.acq, pairwise ~ shade.cover | spp)
-emmeans(n.acq, pairwise ~ n.ppm | spp)
+test(emtrends(ncost.cotton, ~shade.cover, 
+         var = "n.ppm",
+         at = list(shade.cover = c(0, 30, 50, 80)),
+         options = list(),
+         transform = "response"))
+
+emmeans(ncost.cotton, ~n.ppm * shade.cover,
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)),
+        transform = "response")
 
 ###########################################################
-# Total root carbon (g C)
+# Whole plant nitrogen mass (g N) - G. max
 ###########################################################
-root.carbon <- lmer(sqrt(root.carbon.mass) ~ spp * shade.cover * n.ppm +
-                    (1 | block), data = df)
+df$n.acq[20] <- NA
+
+n.acq.soy <- lmer(log(n.acq) ~ shade.cover * n.ppm + (1 | block), 
+                   data = subset(df, spp == "Soybean"))
 
 # Check normality assumptions
-plot(root.carbon)
-qqnorm(residuals(root.carbon))
-qqline(residuals(root.carbon))
+plot(n.acq.soy)
+qqnorm(residuals(n.acq.soy))
+qqline(residuals(n.acq.soy))
+shapiro.test(residuals(n.acq.soy))
+outlierTest(n.acq.soy)
 
 # Model results
-summary(root.carbon)
-Anova(root.carbon)
+summary(n.acq.soy)
+Anova(n.acq.soy)
+r.squaredGLMM(n.acq.soy)
 
 # Pairwise comparisons
-emmeans(root.carbon, pairwise ~ n.ppm | shade.cover | spp)
-emmeans(root.carbon, pairwise ~ shade.cover | n.ppm | spp)
-emmeans(root.carbon, pairwise ~ shade.cover | spp)
-emmeans(root.carbon, pairwise ~ n.ppm | spp)
+test(emtrends(n.acq.soy, ~shade.cover,
+              var = "n.ppm", 
+              at = list(shade.cover = c(0, 30, 50, 80)), 
+              options = list(),
+              transform = "response"))
+emmeans(n.acq.soy, ~n.ppm * shade.cover,
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)),
+        transform = "response")
 
+###########################################################
+# Whole plant nitrogen mass (g N) - G. hirsutum
+###########################################################
+df$n.acq[290] <- NA
+
+n.acq.cotton <- lmer(log(n.acq) ~ shade.cover * n.ppm + (1 | block), 
+                  data = subset(df, spp == "Cotton"))
+
+# Check normality assumptions
+plot(n.acq.cotton)
+qqnorm(residuals(n.acq.cotton))
+qqline(residuals(n.acq.cotton))
+shapiro.test(residuals(n.acq.cotton))
+outlierTest(n.acq.cotton)
+
+# Model results
+summary(n.acq.cotton)
+Anova(n.acq.cotton)
+r.squaredGLMM(n.acq.cotton)
+
+# Pairwise comparisons
+test(emtrends(n.acq.cotton, ~ shade.cover,
+              var = "n.ppm", 
+              at = list(shade.cover = c(0, 30, 50, 80)), 
+              options = list(),
+              transform = "response"))
+emmeans(n.acq.cotton, ~n.ppm*shade.cover,
+        at = list(n.ppm = c(0),
+                  shade.cover = c(0, 30, 50, 80)),
+        transform = "response")
+
+###########################################################
+# Total root carbon (g C) - G. max
+###########################################################
+df$root.carbon.mass[87] <- NA
+
+root.carbon.soy <- lmer(sqrt(root.carbon.mass) ~ shade.cover * n.ppm +
+                      (1 | block), data = subset(df, spp == "Soybean"))
+
+# Check normality assumptions
+plot(root.carbon.soy)
+qqnorm(residuals(root.carbon.soy))
+qqline(residuals(root.carbon.soy))
+shapiro.test(residuals(root.carbon.soy))
+outlierTest(root.carbon.soy)
+
+# Model results
+summary(root.carbon.soy)
+Anova(root.carbon.soy)
+r.squaredGLMM(root.carbon.soy)
+
+# Pairwise comparisons
+test(emtrends(root.carbon.soy, ~shade.cover,
+              var = "n.ppm",
+              at = list(shade.cover = c(0, 30, 50, 80)),
+              options = list(),
+              transform = "response"))
+
+emmeans(root.carbon.soy, ~shade.cover,
+         var = "n.ppm",
+         at = list(n.ppm = 0,
+                   shade.cover = c(0, 30, 50, 80)),
+         options = list(),
+        transform = "response")
+
+###########################################################
+# Total root carbon (g C) - G. hirsutum
+###########################################################
+df$root.carbon.mass[44] <- NA
+
+root.carbon.cotton <- lmer(sqrt(root.carbon.mass) ~ shade.cover * n.ppm +
+                      (1 | block), data = subset(df, spp == "Cotton"))
+
+# Check normality assumptions
+plot(root.carbon.cotton)
+qqnorm(residuals(root.carbon.cotton))
+qqline(residuals(root.carbon.cotton))
+shapiro.test(residuals(root.carbon.cotton))
+outlierTest(root.carbon.cotton)
+
+# Model results
+summary(root.carbon.cotton)
+Anova(root.carbon.cotton)
+r.squaredGLMM(root.carbon.cotton)
+
+# Pairwise comparisons
+test(emtrends(root.carbon.cotton, ~shade.cover,
+              var = "n.ppm",
+              at = list(shade.cover = c(0, 30, 50, 80)),
+              options = list(),
+              transform = "response"))
+emmeans(root.carbon.cotton, ~shade.cover,
+         var = "n.ppm",
+         at = list(n.ppm = 0,
+                   shade.cover = c(0, 30, 50, 80)),
+         options = list(),
+        transform = "response")
 ###########################################################
 # Root nodule weight (g)
 ###########################################################
-## NOTE: Mixed effect model does not contain species term
-## because cotton is not capable of forming root nodules.
-## Thus, species comparisons are excluded from this model
-soy.df <- subset(df, spp == "Soybean")
-soy.df$nod.wt[soy.df$nod.wt == 0] <- NA
+df$nod.wt[c(10, 203)] <- NA
 
-nod.wgt <- lmer(log(nod.wt) ~ shade.cover * n.ppm + (1 | block), 
-                data = soy.df)
+nod.wgt <- lmer(sqrt(nod.wt) ~ shade.cover * n.ppm + (1 | block), 
+                data = subset(df, spp == "Soybean" & nod.wt > 0 ))
 
 # Check normality assumptions
 plot(nod.wgt)
 qqnorm(residuals(nod.wgt))
 qqline(residuals(nod.wgt))
+shapiro.test(residuals(nod.wgt))
+outlierTest(nod.wgt)
 
 # Model results
 summary(nod.wgt)
 Anova(nod.wgt)
+r.squaredGLMM(nod.wgt)
 
 # Pairwise comparisons
-emmeans(nod.wgt, pairwise ~ shade.cover | n.ppm)
-emmeans(nod.wgt, pairwise ~ shade.cover)
-emmeans(nod.wgt, pairwise ~ n.ppm)
-emmeans(nod.wgt, pairwise ~ n.ppm | shade.cover)
+test(emtrends(nod.wgt, ~shade.cover, 
+              var = "n.ppm", 
+              at = list(shade.cover = c(0, 30, 50, 80)), 
+              options = list(),
+              transform = "response"))
+emmeans(nod.wgt, ~shade.cover, 
+          var = "n.ppm", 
+          at = list(n.ppm = 0,
+                    shade.cover = c(0, 30, 50, 80)), 
+          options = list(),
+        transform = "response")
 
+###########################################################
+# Root nodule : root biomass ratio
+###########################################################
+df$nod.root.ratio <- df$nod.wt / df$roots.wt
+
+nod.root <- lmer(sqrt(nod.root.ratio) ~ shade.cover * n.ppm + (1 | block), 
+                data = subset(df, spp == "Soybean" & nod.wt > 0))
+
+# Check normality assumptions
+plot(nod.root)
+qqnorm(residuals(nod.root))
+qqline(residuals(nod.root))
+shapiro.test(residuals(nod.root))
+outlierTest(nod.root)
+
+# Model results
+summary(nod.root)
+Anova(nod.root)
+r.squaredGLMM(nod.root)
+
+test(emtrends(nod.root, ~shade.cover,
+              var = "n.ppm",
+              at = list(shade.cover = c(0, 30, 50, 80)),
+              options = list(),
+              transform = "response"))
+emmeans(nod.root, ~shade.cover,
+        var = "n.ppm",
+        at = list(n.ppm = 0,
+                    shade.cover = c(0, 30, 50, 80)),
+        options = list(),
+        transform = "response")
