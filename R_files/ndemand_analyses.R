@@ -255,8 +255,6 @@ emmeans(nod.wgt, ~shade.cover,
 ###########################################################
 # Root nodule : root biomass ratio
 ###########################################################
-df$nod.root.ratio <- df$nod.wt / df$roots.wt
-
 nod.root <- lmer(sqrt(nod.root.ratio) ~ shade.cover * n.ppm + (1 | block), 
                 data = subset(df, spp == "Soybean" & nod.wt > 0))
 
