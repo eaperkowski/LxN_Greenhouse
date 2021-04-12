@@ -20,5 +20,5 @@ df <- df %>%
                     (leaves.wt * (n.leaf / 100)) + 
                     (roots.wt * (n.root / 100))),
          root.carbon.mass = roots.wt * (c.root / 100),
-         n.cost = root.carbon.mass / n.acq)
-               
+         n.cost = root.carbon.mass / n.acq,
+         nod.root.ratio = nod.wt / roots.wt)
