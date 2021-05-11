@@ -4,8 +4,8 @@
 library(lme4)
 library(car)
 library(emmeans)
-library(MuMIn)
 library(ggplot2)
+library(RVAideMemoire)
 
 ###########################################################
 # Load data frame produced by "create_ndemand_metrics.R"
@@ -21,7 +21,7 @@ source("https://raw.githubusercontent.com/eaperkowski/LxN_Greenhouse/main/R_file
 #
 #   Random effects:
 #     - block         - three blocks
-#
+
 #   Response variables:
 #     - n.acq         - whole plant nitrogen mass
 #     - root.carbon   - total root carbon mass
@@ -54,10 +54,10 @@ test(emtrends(ncost.soy, ~shade.cover,
               at = list(shade.cover = c(0, 30, 50, 80)),
               options = list(),
               transform = "response"))
-emmeans(ncost.soy, ~n.ppm * shade.cover,
-        at = list(n.ppm = 0,
-                  shade.cover = c(0, 30, 50, 80)),
-        transform = "response")
+p <- emmeans(ncost.soy, ~n.ppm * shade.cover,
+             at = list(n.ppm = 0,
+                       shade.cover = c(0, 30, 50, 80)))
+back.emmeans(p, transform = "log")
 
 ###########################################################
 # Carbon cost to acquire nitrogen (g C g-1 N) - G. hirsutum
@@ -85,7 +85,6 @@ test(emtrends(ncost.cotton, ~shade.cover,
          at = list(shade.cover = c(0, 30, 50, 80)),
          options = list(),
          transform = "response"))
-
 emmeans(ncost.cotton, ~n.ppm * shade.cover,
         at = list(n.ppm = 0,
                   shade.cover = c(0, 30, 50, 80)),
