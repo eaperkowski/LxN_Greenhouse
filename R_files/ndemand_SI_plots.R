@@ -1,0 +1,262 @@
+###########################################################
+## Load libraries
+###########################################################
+library(ggplot2)
+library(ggpubr)
+
+###########################################################
+## Load libraries, create species labels, and colorblind
+## friendly palette
+###########################################################
+source("https://raw.githubusercontent.com/eaperkowski/LxN_Greenhouse/main/R_files/create_ndemand_metrics.R")
+
+species.label <- c("G. max", "G. hirsutum")
+names(species.label) <- c("Soybean", "Cotton")
+
+cbbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#CC79A7")
+
+###########################################################
+## Add pubtheme
+###########################################################
+pubtheme <- theme_bw() +
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 20, face = "italic"),
+        panel.border = element_rect(size = 3, fill = NA),
+        axis.text = element_text(size = 20),
+        axis.title = element_text(size = 24),
+        legend.box.background = element_blank(),
+        legend.key = element_rect(fill = NA),
+        legend.background=element_blank(),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 20),
+        axis.ticks.length = unit(0.25, "cm"))
+
+###########################################################
+## Calculate BVR, RMF, and total biomass
+###########################################################
+df <- df %>%
+  mutate(total.bio = stem.wt + roots.wt + leaves.wt,
+         rmf = roots.wt / total.bio,
+         bvr = total.bio / 3) %>%
+  filter(complete.cases(stem.wt))
+
+###########################################################
+## Remove outliers per analyses (Bonferroni p<0.05)
+###########################################################
+df$rmf[c(10, 87, 91, 318, 334)] <- NA
+df$rmf[c(44, 172, 273, 277, 333)] <- NA
+
+###########################################################
+# Biomass : volume ratio plots
+###########################################################        
+bvr.soy <- ggplot(data = subset(df, spp == "Soybean"), 
+                  aes(x = n.ppm,
+                      y = bvr,
+                      color = factor(shade.cover))) +
+  geom_jitter(aes(color = factor(shade.cover)), 
+              size = 4.5, alpha = 0.5, width = 23.625) +
+  geom_hline(yintercept = 1, color = "red", size = 2) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.738, yend = 0.000790*630 + 0.738), color = "#E69F00", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.612, yend = 0.000591*630 + 0.612), color = "#56B4E9", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.527, yend = 0.000458*630 + 0.527), color = "#009E73", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.401, yend = 0.000258*630 + 0.401), 
+               color = "#CC79A7", size = 3, linetype = "dashed") +
+  scale_color_manual(values = cbbPalette,
+                     labels = c("0", "30",
+                                "50", "80")) +
+  scale_x_continuous(limits = c(-30, 660), breaks = seq(0, 660, 220)) +
+  scale_y_continuous(limits = c(0, 2), breaks = seq(0, 2, 0.5)) +
+  labs(x = expression(bold("Nitrogen fertilization (ppm)")),
+       y = NULL,
+       color = "Shade cover (%)") +
+  pubtheme +
+  guides(fill = FALSE,
+         linetype = FALSE,
+         color = guide_legend(override.aes = list(fill = NA))) +
+  facet_grid(.~spp, labeller = labeller(spp = species.label))
+bvr.soy
+
+bvr.cotton <- ggplot(data = subset(df, spp == "Cotton"), 
+                     aes(x = n.ppm,
+                         y = bvr,
+                         color = factor(shade.cover))) +
+  geom_jitter(aes(color = factor(shade.cover)), 
+              size = 4.5, alpha = 0.5, width = 23.625) +
+  geom_hline(yintercept = 1, color = "red", size = 2) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.791, yend = 7.93e-04*630 + 0.791), color = "#E69F00", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.566, yend = 3.70e-04*630 + 0.566), color = "#56B4E9", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.453, yend = 2.00e-04*630 + 0.453), color = "#009E73", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.324, yend = 4.93e-05*630 + 0.324), 
+               color = "#CC79A7", size = 3, linetype = "dashed") +
+  scale_color_manual(values = cbbPalette,
+                     labels = c("0", "30",
+                                "50", "80")) +
+  scale_x_continuous(limits = c(-30, 660), breaks = seq(0, 660, 220)) +
+  scale_y_continuous(limits = c(0, 2), breaks = seq(0, 2, 0.5)) +
+  labs(x = expression(bold("Nitrogen fertilization (ppm)")),
+       y = expression(bold("Total biomass : pot volume (g L"^"-1"~")")),
+       color = "Shade cover (%)") +
+  pubtheme +
+  guides(fill = FALSE,
+         linetype = FALSE,
+         color = guide_legend(override.aes = list(fill = NA))) +
+  facet_grid(.~spp, labeller = labeller(spp = species.label))
+bvr.cotton
+
+q <- ggarrange(bvr.cotton, bvr.soy, nrow = 1, ncol = 2,
+               common.legend = TRUE,
+               legend = "right", align = "hv", 
+               labels = NULL)
+q
+ggsave("/Users/eaperkowski/git/manuscripts/N_demand_paper/figs/figS1.bvr.png",
+       q,
+       width = 16,
+       height = 7,
+       dpi = "retina")
+
+###########################################################
+# Root mass fraction plots
+########################################################### 
+rmf.soy <- ggplot(data = subset(df, spp == "Soybean"), 
+                  aes(x = n.ppm,
+                      y = rmf,
+                      color = factor(shade.cover))) +
+  geom_jitter(aes(color = factor(shade.cover)), 
+              size = 4.5, alpha = 0.5, width = 23.625) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.218, yend = 1.98E-05*630 + 0.218), 
+               color = "#E69F00", size = 3, linetype = "dashed") +
+  geom_segment(aes(x = 0, xend = 630, y = 0.168, yend = -1.01E-05*630 + 0.168), 
+               color = "#56B4E9", size = 3, linetype = "dashed") +
+  geom_segment(aes(x = 0, xend = 630, y = 0.142, yend = -2.20E-05*630 + 0.142), 
+               color = "#009E73", size = 3, linetype = "dashed") +
+  geom_segment(aes(x = 0, xend = 630, y = 0.110, yend = -3.17E-05*630 + 0.110), 
+               color = "#CC79A7", size = 3, linetype = "dashed") +
+  scale_color_manual(values = cbbPalette,
+                     labels = c("0", "30",
+                                "50", "80")) +
+  scale_x_continuous(limits = c(-30, 660), breaks = seq(0, 660, 220)) +
+  scale_y_continuous(limits = c(0, 0.4), breaks = seq(0, 0.4, 0.1)) +
+  labs(x = expression(bold("Nitrogen fertilization (ppm)")),
+       y = NULL,
+       color = "Shade cover (%)") +
+  pubtheme +
+  guides(fill = FALSE,
+         linetype = FALSE,
+         color = guide_legend(override.aes = list(fill = NA))) +
+  facet_grid(.~spp, labeller = labeller(spp = species.label))
+rmf.soy
+
+rmf.cotton <- ggplot(data = subset(df, spp == "Cotton"), 
+                     aes(x = n.ppm,
+                         y = rmf,
+                         color = factor(shade.cover))) +
+  geom_jitter(aes(color = factor(shade.cover)), 
+              size = 4.5, alpha = 0.5, width = 23.625) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.190, yend = -5.53E-05*630 + 0.190), 
+               color = "#E69F00", size = 3, linetype = "dashed") +
+  geom_segment(aes(x = 0, xend = 630, y = 0.159, yend = -4.81E-05*630 + 0.159), 
+               color = "#56B4E9", size = 3, linetype = "dashed") +
+  geom_segment(aes(x = 0, xend = 630, y = 0.141, yend = -4.38E-05*630 + 0.141), 
+               color = "#009E73", size = 3, linetype = "dashed") +
+  geom_segment(aes(x = 0, xend = 630, y = 0.118, yend = -3.80E-05*630 + 0.118), 
+               color = "#CC79A7", size = 3, linetype = "dashed") +
+  scale_color_manual(values = cbbPalette,
+                     labels = c("0", "30",
+                                "50", "80")) +
+  scale_x_continuous(limits = c(-30, 660), breaks = seq(0, 660, 220)) +
+  scale_y_continuous(limits = c(0, 0.4), breaks = seq(0, 0.4, 0.1)) +
+  labs(x = expression(bold("Nitrogen fertilization (ppm)")),
+       y = expression(bold("Root mass fraction (unitless)")),
+       color = "Shade cover (%)") +
+  pubtheme +
+  guides(fill = FALSE,
+         linetype = FALSE,
+         color = guide_legend(override.aes = list(fill = NA))) +
+  facet_grid(.~spp, labeller = labeller(spp = species.label))
+rmf.cotton
+
+r <- ggarrange(rmf.cotton, rmf.soy, nrow = 1, ncol = 2,
+               common.legend = TRUE,
+               legend = "right", align = "hv", 
+               labels = NULL, 
+               font.label = list(size = 18))
+r
+ggsave("/Users/eaperkowski/git/manuscripts/N_demand_paper/figs/figS2.rmf.png",
+       r,
+       width = 16,
+       height = 7,
+       dpi = "retina")
+
+###########################################################
+# Whole plant biomass plots
+########################################################### 
+tot.soy <- ggplot(data = subset(df, spp == "Soybean"), 
+                  aes(x = n.ppm,
+                      y = total.bio,
+                      color = factor(shade.cover))) +
+  geom_jitter(aes(color = factor(shade.cover)), 
+              size = 4.5, alpha = 0.5, width = 23.625) +
+  geom_segment(aes(x = 0, xend = 630, y = 2.142, yend = 2.44E-03*630 + 2.142), 
+               color = "#E69F00", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 1.734, yend = 1.17E-03*630 + 1.734), 
+               color = "#56B4E9", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 1.486, yend = 1.29E-03*630 + 1.486), 
+               color = "#009E73", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 1.150, yend = 7.58E-04*630 + 1.150), 
+               color = "#CC79A7", size = 3, linetype = "dashed") +
+  scale_color_manual(values = cbbPalette,
+                     labels = c("0", "30",
+                                "50", "80")) +
+  scale_x_continuous(limits = c(-30, 660), breaks = seq(0, 660, 220)) +
+  scale_y_continuous(limits = c(0, 6), breaks = seq(0, 6, 2)) +
+  labs(x = expression(bold("Nitrogen fertilization (ppm)")),
+       y = NULL,
+       color = "Shade cover (%)") +
+  pubtheme +
+  guides(fill = FALSE,
+         linetype = FALSE,
+         color = guide_legend(override.aes = list(fill = NA))) +
+  facet_grid(.~spp, labeller = labeller(spp = species.label))
+tot.soy
+
+tot.cotton <- ggplot(data = subset(df, spp == "Cotton"), 
+                     aes(x = n.ppm,
+                         y = total.bio,
+                         color = factor(shade.cover))) +
+  geom_jitter(aes(color = factor(shade.cover)), 
+              size = 4.5, alpha = 0.5, width = 23.625) +
+  geom_segment(aes(x = 0, xend = 630, y = 2.373, yend = 2.38E-03*630 + 2.373), 
+               color = "#E69F00", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 1.698, yend = 1.11E-03*630 + 1.698), 
+               color = "#56B4E9", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 1.358, yend = 6.00E-04*630 + 1.358), 
+               color = "#009E73", size = 3, linetype = "dashed") +
+  geom_segment(aes(x = 0, xend = 630, y = 0.971, yend = 1.48E-04*630 + 0.971), 
+               color = "#CC79A7", size = 3, linetype = "dashed") +
+  scale_color_manual(values = cbbPalette,
+                     labels = c("0", "30",
+                                "50", "80")) +
+  scale_x_continuous(limits = c(-30, 660), breaks = seq(0, 660, 220)) +
+  scale_y_continuous(limits = c(0, 6), breaks = seq(0, 6, 2)) +
+  labs(x = expression(bold("Nitrogen fertilization (ppm)")),
+       y = expression(bold("Total plant biomass (g)")),
+       color = "Shade cover (%)") +
+  pubtheme +
+  guides(fill = FALSE,
+         linetype = FALSE,
+         color = guide_legend(override.aes = list(fill = NA))) +
+  facet_grid(.~spp, labeller = labeller(spp = species.label))
+tot.cotton
+
+s <- ggarrange(tot.cotton, tot.soy, nrow = 1, ncol = 2,
+               common.legend = TRUE,
+               legend = "right", align = "hv", 
+               labels = NULL, 
+               font.label = list(size = 18))
+s
+ggsave("/Users/eaperkowski/git/manuscripts/N_demand_paper/figs/figS3.totalBiomass.png",
+       s,
+       width = 16,
+       height = 7,
+       dpi = "retina")
