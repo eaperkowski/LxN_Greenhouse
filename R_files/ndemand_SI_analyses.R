@@ -20,7 +20,7 @@ df <- df %>%
   mutate(total.bio = stem.wt + roots.wt + leaves.wt,
          rmf = roots.wt / total.bio,
          bvr = total.bio / 3) %>%
-  filter(complete.cases(stem.wt))
+  filter(complete.cases(stem.wt, leaves.wt, n.stem))
 
 ###########################################################
 # BVR - G. max
@@ -66,21 +66,31 @@ summary(bvr.cotton)
 Anova(bvr.cotton)
 
 # Pairwise comparisons
+## For bvr-n.ppm slope
+emtrends(bvr.cotton, ~shade.cover,
+              var = "n.ppm",
+              at = list(shade.cover = c(0, 30, 50, 80)),
+              options = list(), 
+              transform = "response")
+## For bvr-n.ppm significance level
 test(emtrends(bvr.cotton, ~shade.cover,
               var = "n.ppm",
               at = list(shade.cover = c(0, 30, 50, 80)),
-              options = list(), transform = "response"))
-bvr.cotton.int <- emmeans(bvr.cotton, ~n.ppm * shade.cover,
+              options = list(), 
+              type = "response"))
+
+## For bvr-n.ppm intercept
+emmeans(bvr.cotton, ~n.ppm * shade.cover,
                    at = list(n.ppm = 0,
-                             shade.cover = c(0, 30, 50, 80)))  
-back.emmeans(bvr.cotton.int, transform = "log")
+                             shade.cover = c(0, 30, 50, 80)),
+        type = "response")  
 
 ###########################################################
 # Root mass fraction - G. max
 ###########################################################
-df$rmf[c(10, 87, 91, 318, 334)] <- NA
+df$rmf[c(86, 90, 316, 332)] <- NA
 
-rmf.soy <- lmer(log(rmf) ~ shade.cover * n.ppm + (1 | block), 
+rmf.soy <- lmer(rmf ~ shade.cover * n.ppm + (1 | block), 
                 data = subset(df, spp == "Soybean"))
 
 # Check normality assumptions
@@ -95,21 +105,29 @@ summary(rmf.soy)
 Anova(rmf.soy)
 
 # Pairwise comparisons
-test(emtrends(rmf.soy, ~shade.cover, 
+## For rmf-n.ppm slope
+emtrends(rmf.soy, ~shade.cover,
+         var = "n.ppm",
+         at = list(shade.cover = c(0, 30, 50, 80)),
+         options = list(), 
+         transform = "response")
+## For rmf-n.ppm significance level
+test(emtrends(rmf.soy, ~shade.cover,
               var = "n.ppm",
               at = list(shade.cover = c(0, 30, 50, 80)),
-              options = list(),
-              transform = "response"))
-rmf.soy.int <- emmeans(rmf.soy, ~shade.cover,
-                       var = "n.ppm",
-                       at = list(n.ppm = 0,
-                                 shade.cover = c(0, 30, 50, 80)))
-back.emmeans(rmf.soy.int, transform = "log")
+              options = list(), 
+              type = "response"))
+
+## For rmf-n.ppm intercept
+emmeans(rmf.soy, ~n.ppm * shade.cover,
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)),
+        type = "response")  
 
 ###########################################################
 # Root mass fraction - G. hirsutum
 ###########################################################
-df$rmf[c(44, 172, 273, 277, 333)] <- NA
+df$rmf[c(44, 171, 271, 275, 331)] <- NA
 
 rmf.cotton <- lmer(log(rmf) ~ shade.cover * n.ppm + (1 | block), 
                 data = subset(df, spp == "Cotton"))
@@ -126,16 +144,24 @@ summary(rmf.cotton)
 Anova(rmf.cotton)
 
 # Pairwise comparisons
-test(emtrends(rmf.cotton, ~shade.cover, 
+## For rmf-n.ppm slope
+emtrends(rmf.cotton, ~shade.cover,
+         var = "n.ppm",
+         at = list(shade.cover = c(0, 30, 50, 80)),
+         options = list(), 
+         transform = "response")
+## For rmf-n.ppm significance level
+test(emtrends(rmf.cotton, ~shade.cover,
               var = "n.ppm",
               at = list(shade.cover = c(0, 30, 50, 80)),
-              options = list(),
-              transform = "response"))
-rmf.cotton.int <- emmeans(rmf.cotton, ~shade.cover,
-                          var = "n.ppm",
-                          at = list(n.ppm = 0,
-                                    shade.cover = c(0, 30, 50, 80)))
-back.emmeans(rmf.cotton.int, transform = "log")
+              options = list(), 
+              type = "response"))
+
+## For rmf-n.ppm intercept
+emmeans(rmf.cotton, ~n.ppm * shade.cover,
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)),
+        type = "response") 
 
 ###########################################################
 # Total biomass - G. max
@@ -155,16 +181,24 @@ summary(tot.soy)
 Anova(tot.soy)
 
 # Pairwise comparisons
-test(emtrends(tot.soy, ~shade.cover, 
+## For tot-n.ppm slope
+emtrends(tot.soy, ~shade.cover,
+         var = "n.ppm",
+         at = list(shade.cover = c(0, 30, 50, 80)),
+         options = list(), 
+         transform = "response")
+## For tot-n.ppm significance level
+test(emtrends(tot.soy, ~shade.cover,
               var = "n.ppm",
               at = list(shade.cover = c(0, 30, 50, 80)),
-              options = list(),
-              transform = "response"))
-tot.soy.int <- emmeans(tot.soy, ~shade.cover,
-                          var = "n.ppm",
-                          at = list(n.ppm = 0,
-                                    shade.cover = c(0, 30, 50, 80)))
-back.emmeans(tot.soy.int, transform = "sqrt")
+              options = list(), 
+              type = "response"))
+
+## For tot-n.ppm intercept
+emmeans(tot.soy, ~n.ppm * shade.cover,
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)),
+        type = "response")  
 
 ###########################################################
 # Total  biomass - G. hirsutum
@@ -184,13 +218,21 @@ summary(tot.cotton)
 Anova(tot.cotton)
 
 # Pairwise comparisons
-test(emtrends(tot.cotton, ~shade.cover, 
+## For tot-n.ppm slope
+emtrends(tot.cotton, ~shade.cover,
+         var = "n.ppm",
+         at = list(shade.cover = c(0, 30, 50, 80)),
+         options = list(), 
+         transform = "response")
+## For tot-n.ppm significance level
+test(emtrends(tot.cotton, ~shade.cover,
               var = "n.ppm",
               at = list(shade.cover = c(0, 30, 50, 80)),
-              options = list(),
-              transform = "response"))
-tot.cotton.int <- emmeans(tot.cotton, ~shade.cover,
-                          var = "n.ppm", 
-                          at = list(n.ppm = 0,
-                                    shade.cover = c(0, 30, 50, 80)))
-back.emmeans(tot.cotton.int, transform = "log")
+              options = list(), 
+              type = "response"))
+
+## For tot-n.ppm intercept
+emmeans(tot.cotton, ~n.ppm * shade.cover,
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)),
+        type = "response") 

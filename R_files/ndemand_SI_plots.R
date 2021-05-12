@@ -24,7 +24,7 @@ pubtheme <- theme_bw() +
         strip.text = element_text(size = 20, face = "italic"),
         panel.border = element_rect(size = 3, fill = NA),
         axis.text = element_text(size = 20),
-        axis.title = element_text(size = 24),
+        axis.title = element_text(size = 24, face = "bold"),
         legend.box.background = element_blank(),
         legend.key = element_rect(fill = NA),
         legend.background=element_blank(),
@@ -39,13 +39,13 @@ df <- df %>%
   mutate(total.bio = stem.wt + roots.wt + leaves.wt,
          rmf = roots.wt / total.bio,
          bvr = total.bio / 3) %>%
-  filter(complete.cases(stem.wt))
+  filter(complete.cases(stem.wt, leaves.wt, n.stem))
 
 ###########################################################
 ## Remove outliers per analyses (Bonferroni p<0.05)
 ###########################################################
-df$rmf[c(10, 87, 91, 318, 334)] <- NA
-df$rmf[c(44, 172, 273, 277, 333)] <- NA
+df$rmf[c(86, 90, 316, 332)] <- NA
+df$rmf[c(44, 171, 271, 275, 331)] <- NA
 
 ###########################################################
 # Biomass : volume ratio plots
@@ -57,17 +57,17 @@ bvr.soy <- ggplot(data = subset(df, spp == "Soybean"),
   geom_jitter(aes(color = factor(shade.cover)), 
               size = 4.5, alpha = 0.5, width = 23.625) +
   geom_hline(yintercept = 1, color = "red", size = 2) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.738, yend = 0.000790*630 + 0.738), color = "#E69F00", size = 3) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.612, yend = 0.000591*630 + 0.612), color = "#56B4E9", size = 3) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.527, yend = 0.000458*630 + 0.527), color = "#009E73", size = 3) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.401, yend = 0.000258*630 + 0.401), 
+  geom_segment(aes(x = 0, xend = 630, y = 0.740, yend = 7.86E-04*630 + 0.740), color = "#E69F00", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.613, yend = 5.87E-04*630 + 0.613), color = "#56B4E9", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.529, yend = 4.55E-04*630 + 0.529), color = "#009E73", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.402, yend = 2.57E-05*630 + 0.402), 
                color = "#CC79A7", size = 3, linetype = "dashed") +
   scale_color_manual(values = cbbPalette,
                      labels = c("0", "30",
                                 "50", "80")) +
   scale_x_continuous(limits = c(-30, 660), breaks = seq(0, 660, 220)) +
   scale_y_continuous(limits = c(0, 2), breaks = seq(0, 2, 0.5)) +
-  labs(x = expression(bold("Nitrogen fertilization (ppm)")),
+  labs(x = "Nitrogen fertilization (ppm)",
        y = NULL,
        color = "Shade cover (%)") +
   pubtheme +
@@ -84,10 +84,10 @@ bvr.cotton <- ggplot(data = subset(df, spp == "Cotton"),
   geom_jitter(aes(color = factor(shade.cover)), 
               size = 4.5, alpha = 0.5, width = 23.625) +
   geom_hline(yintercept = 1, color = "red", size = 2) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.791, yend = 7.93e-04*630 + 0.791), color = "#E69F00", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.792, yend = 7.92e-04*630 + 0.792), color = "#E69F00", size = 3) +
   geom_segment(aes(x = 0, xend = 630, y = 0.566, yend = 3.70e-04*630 + 0.566), color = "#56B4E9", size = 3) +
   geom_segment(aes(x = 0, xend = 630, y = 0.453, yend = 2.00e-04*630 + 0.453), color = "#009E73", size = 3) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.324, yend = 4.93e-05*630 + 0.324), 
+  geom_segment(aes(x = 0, xend = 630, y = 0.324, yend = 4.96e-05*630 + 0.324), 
                color = "#CC79A7", size = 3, linetype = "dashed") +
   scale_color_manual(values = cbbPalette,
                      labels = c("0", "30",
@@ -124,20 +124,20 @@ rmf.soy <- ggplot(data = subset(df, spp == "Soybean"),
                       color = factor(shade.cover))) +
   geom_jitter(aes(color = factor(shade.cover)), 
               size = 4.5, alpha = 0.5, width = 23.625) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.218, yend = 1.98E-05*630 + 0.218), 
+  geom_segment(aes(x = 0, xend = 630, y = 0.218, yend = 1.33E-05*630 + 0.218), 
                color = "#E69F00", size = 3, linetype = "dashed") +
-  geom_segment(aes(x = 0, xend = 630, y = 0.168, yend = -1.01E-05*630 + 0.168), 
+  geom_segment(aes(x = 0, xend = 630, y = 0.168, yend = -5.02E-06*630 + 0.168), 
                color = "#56B4E9", size = 3, linetype = "dashed") +
-  geom_segment(aes(x = 0, xend = 630, y = 0.142, yend = -2.20E-05*630 + 0.142), 
+  geom_segment(aes(x = 0, xend = 630, y = 0.142, yend = -1.72E-05*630 + 0.142), 
                color = "#009E73", size = 3, linetype = "dashed") +
-  geom_segment(aes(x = 0, xend = 630, y = 0.110, yend = -3.17E-05*630 + 0.110), 
+  geom_segment(aes(x = 0, xend = 630, y = 0.110, yend = -3.56E-05*630 + 0.110), 
                color = "#CC79A7", size = 3, linetype = "dashed") +
   scale_color_manual(values = cbbPalette,
                      labels = c("0", "30",
                                 "50", "80")) +
   scale_x_continuous(limits = c(-30, 660), breaks = seq(0, 660, 220)) +
   scale_y_continuous(limits = c(0, 0.4), breaks = seq(0, 0.4, 0.1)) +
-  labs(x = expression(bold("Nitrogen fertilization (ppm)")),
+  labs(x = "Nitrogen fertilization (ppm)",
        y = NULL,
        color = "Shade cover (%)") +
   pubtheme +
@@ -153,13 +153,13 @@ rmf.cotton <- ggplot(data = subset(df, spp == "Cotton"),
                          color = factor(shade.cover))) +
   geom_jitter(aes(color = factor(shade.cover)), 
               size = 4.5, alpha = 0.5, width = 23.625) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.190, yend = -5.53E-05*630 + 0.190), 
+  geom_segment(aes(x = 0, xend = 630, y = 0.190, yend = -5.70E-05*630 + 0.190), 
                color = "#E69F00", size = 3, linetype = "dashed") +
-  geom_segment(aes(x = 0, xend = 630, y = 0.159, yend = -4.81E-05*630 + 0.159), 
-               color = "#56B4E9", size = 3, linetype = "dashed") +
-  geom_segment(aes(x = 0, xend = 630, y = 0.141, yend = -4.38E-05*630 + 0.141), 
-               color = "#009E73", size = 3, linetype = "dashed") +
-  geom_segment(aes(x = 0, xend = 630, y = 0.118, yend = -3.80E-05*630 + 0.118), 
+  geom_segment(aes(x = 0, xend = 630, y = 0.159, yend = -4.88E-05*630 + 0.159), 
+               color = "#56B4E9", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.141, yend = -4.40E-05*630 + 0.141), 
+               color = "#009E73", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.118, yend = -3.77E-05*630 + 0.118), 
                color = "#CC79A7", size = 3, linetype = "dashed") +
   scale_color_manual(values = cbbPalette,
                      labels = c("0", "30",
@@ -197,20 +197,20 @@ tot.soy <- ggplot(data = subset(df, spp == "Soybean"),
                       color = factor(shade.cover))) +
   geom_jitter(aes(color = factor(shade.cover)), 
               size = 4.5, alpha = 0.5, width = 23.625) +
-  geom_segment(aes(x = 0, xend = 630, y = 2.142, yend = 2.44E-03*630 + 2.142), 
+  geom_segment(aes(x = 0, xend = 630, y = 2.142, yend = 2.42E-03*630 + 2.142), 
                color = "#E69F00", size = 3) +
-  geom_segment(aes(x = 0, xend = 630, y = 1.734, yend = 1.17E-03*630 + 1.734), 
+  geom_segment(aes(x = 0, xend = 630, y = 1.734, yend = 1.71E-03*630 + 1.734), 
                color = "#56B4E9", size = 3) +
   geom_segment(aes(x = 0, xend = 630, y = 1.486, yend = 1.29E-03*630 + 1.486), 
                color = "#009E73", size = 3) +
-  geom_segment(aes(x = 0, xend = 630, y = 1.150, yend = 7.58E-04*630 + 1.150), 
-               color = "#CC79A7", size = 3, linetype = "dashed") +
+  geom_segment(aes(x = 0, xend = 630, y = 1.150, yend = 7.55E-04*630 + 1.150), 
+               color = "#CC79A7", size = 3) +
   scale_color_manual(values = cbbPalette,
                      labels = c("0", "30",
                                 "50", "80")) +
   scale_x_continuous(limits = c(-30, 660), breaks = seq(0, 660, 220)) +
   scale_y_continuous(limits = c(0, 6), breaks = seq(0, 6, 2)) +
-  labs(x = expression(bold("Nitrogen fertilization (ppm)")),
+  labs(x = "Nitrogen fertilization (ppm)",
        y = NULL,
        color = "Shade cover (%)") +
   pubtheme +
@@ -231,8 +231,8 @@ tot.cotton <- ggplot(data = subset(df, spp == "Cotton"),
   geom_segment(aes(x = 0, xend = 630, y = 1.698, yend = 1.11E-03*630 + 1.698), 
                color = "#56B4E9", size = 3) +
   geom_segment(aes(x = 0, xend = 630, y = 1.358, yend = 6.00E-04*630 + 1.358), 
-               color = "#009E73", size = 3, linetype = "dashed") +
-  geom_segment(aes(x = 0, xend = 630, y = 0.971, yend = 1.48E-04*630 + 0.971), 
+               color = "#009E73", size = 3) +
+  geom_segment(aes(x = 0, xend = 630, y = 0.971, yend = 1.49E-04*630 + 0.971), 
                color = "#CC79A7", size = 3, linetype = "dashed") +
   scale_color_manual(values = cbbPalette,
                      labels = c("0", "30",
