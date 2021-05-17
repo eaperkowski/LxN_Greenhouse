@@ -54,9 +54,9 @@ bvr.soy <- ggplot(data = subset(df, spp == "Soybean"),
                   aes(x = n.ppm,
                       y = bvr,
                       color = factor(shade.cover))) +
+  geom_hline(yintercept = 1, color = "red", size = 2) +
   geom_jitter(aes(color = factor(shade.cover)), 
               size = 4.5, alpha = 0.5, width = 23.625) +
-  geom_hline(yintercept = 1, color = "red", size = 2) +
   geom_segment(aes(x = 0, xend = 630, y = 0.740, yend = 7.86E-04*630 + 0.740), color = "#E69F00", size = 3) +
   geom_segment(aes(x = 0, xend = 630, y = 0.613, yend = 5.87E-04*630 + 0.613), color = "#56B4E9", size = 3) +
   geom_segment(aes(x = 0, xend = 630, y = 0.529, yend = 4.55E-04*630 + 0.529), color = "#009E73", size = 3) +
@@ -81,9 +81,9 @@ bvr.cotton <- ggplot(data = subset(df, spp == "Cotton"),
                      aes(x = n.ppm,
                          y = bvr,
                          color = factor(shade.cover))) +
+  geom_hline(yintercept = 1, color = "red", size = 2) +
   geom_jitter(aes(color = factor(shade.cover)), 
               size = 4.5, alpha = 0.5, width = 23.625) +
-  geom_hline(yintercept = 1, color = "red", size = 2) +
   geom_segment(aes(x = 0, xend = 630, y = 0.792, yend = 7.92e-04*630 + 0.792), color = "#E69F00", size = 3) +
   geom_segment(aes(x = 0, xend = 630, y = 0.566, yend = 3.70e-04*630 + 0.566), color = "#56B4E9", size = 3) +
   geom_segment(aes(x = 0, xend = 630, y = 0.453, yend = 2.00e-04*630 + 0.453), color = "#009E73", size = 3) +

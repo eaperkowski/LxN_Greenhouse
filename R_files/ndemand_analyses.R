@@ -5,7 +5,6 @@ library(lme4)
 library(car)
 library(emmeans)
 library(tidyverse)
-library(RVAideMemoire)
 
 ###########################################################
 # Load data frame produced by "create_ndemand_metrics.R"
@@ -16,9 +15,7 @@ source("https://raw.githubusercontent.com/eaperkowski/LxN_Greenhouse/main/R_file
 # Remove rows with missing biomass or nitrogen data
 ###########################################################
 df <- df %>%
-        filter(complete.cases(stem.wt)) %>%
-        filter(complete.cases(leaves.wt)) %>%
-        filter(complete.cases(n.stem))
+        filter(complete.cases(stem.wt, leaves.wt, n.stem))
 
 ###########################################################
 # Mixed effect model structure
@@ -39,9 +36,9 @@ df <- df %>%
 ###########################################################
 # Carbon cost to acquire nitrogen (g C g-1 N) - G. max
 ###########################################################
-df$n.cost[c(112, 300, 332)] <- NA
+df$n.cost[c(316, 332)] <- NA
 
-ncost.soy <- lmer(n.cost ~ shade.cover * n.ppm + (1 | block), 
+ncost.soy <- lmer(sqrt(n.cost) ~ shade.cover * n.ppm + (1 | block), 
                    data = subset(df, spp == "Soybean"))
 
 # Check normality assumptions
@@ -56,13 +53,31 @@ summary(ncost.soy)
 Anova(ncost.soy)
 
 # Post-hoc analyses
+## For nocst-n.ppm slope
+emtrends(ncost.soy, ~shade.cover,
+              var = "n.ppm",
+              at = list(shade.cover = c(0, 30, 50, 80)),
+              options = list(),
+         transform = "response")
+
+## For n.cost-n.ppm slope significance level
 test(emtrends(ncost.soy, ~shade.cover,
               var = "n.ppm",
               at = list(shade.cover = c(0, 30, 50, 80)),
-              options = list()))
+              options = list()),
+     type = "response")
+
+test(emtrends(ncost.soy, ~1,
+              var = "n.ppm",
+              at = list(shade.cover = c(0, 30, 50, 80)),
+              options = list()),
+     type = "response")
+
+## For n.cost-n.ppm intercept
 emmeans(ncost.soy, ~shade.cover,
         var = "n.ppm",at = list(n.ppm = 0,
-                                shade.cover = c(0, 30, 50, 80)))
+                                shade.cover = c(0, 30, 50, 80)),
+        type = "response")
 
 ###########################################################
 # Carbon cost to acquire nitrogen (g C g-1 N) - G. hirsutum
@@ -120,7 +135,6 @@ outlierTest(n.acq.soy)
 
 # Model results
 summary(n.acq.soy)
-coef(n.acq.soy)
 Anova(n.acq.soy)
 
 # Pairwise comparisons
@@ -148,7 +162,7 @@ emmeans(n.acq.soy, ~shade.cover,
 ###########################################################
 # Whole plant nitrogen mass (g N) - G. hirsutum
 ###########################################################
-df$n.acq[c(286, 290)] <- NA
+df$n.acq[c(286)] <- NA
 
 n.acq.cotton <- lmer(log(n.acq) ~ shade.cover * n.ppm + (1 | block), 
                   data = subset(df, spp == "Cotton"))
