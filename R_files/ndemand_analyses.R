@@ -6,6 +6,8 @@ library(car)
 library(emmeans)
 library(tidyverse)
 
+emm_options(opt.digits = FALSE)
+
 ###########################################################
 # Load data frame produced by "create_ndemand_metrics.R"
 ###########################################################
@@ -38,8 +40,8 @@ df <- df %>%
 ###########################################################
 df$n.cost[c(316, 332)] <- NA
 
-ncost.soy <- lmer(sqrt(n.cost) ~ shade.cover * n.ppm + (1 | block), 
-                   data = subset(df, spp == "Soybean"))
+ncost.soy <- lmer(sqrt(n.cost) ~ shade.cover * n.ppm + (1 | block),
+                  data = subset(df, spp == "Soybean"))
 
 # Check normality assumptions
 plot(ncost.soy)
@@ -53,30 +55,34 @@ summary(ncost.soy)
 Anova(ncost.soy)
 
 # Post-hoc analyses
-## For nocst-n.ppm slope
-emtrends(ncost.soy, ~shade.cover,
+## For slope
+test(emtrends(ncost.soy, 
+              ~shade.cover,
+              var = "n.ppm",
+              at = list(shade.cover = c(0, 30, 50, 80)),
+              options = list()))
+
+## For intercept
+emmeans(ncost.soy, 
+        ~shade.cover,
+        var = "n.ppm",
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)))
+
+## For back-transformed slope
+test(emtrends(ncost.soy, 
+              ~shade.cover,
               var = "n.ppm",
               at = list(shade.cover = c(0, 30, 50, 80)),
               options = list(),
-         transform = "response")
+              transform = "response"))
 
-## For n.cost-n.ppm slope significance level
-test(emtrends(ncost.soy, ~shade.cover,
-              var = "n.ppm",
-              at = list(shade.cover = c(0, 30, 50, 80)),
-              options = list()),
-     type = "response")
-
-test(emtrends(ncost.soy, ~1,
-              var = "n.ppm",
-              at = list(shade.cover = c(0, 30, 50, 80)),
-              options = list()),
-     type = "response")
-
-## For n.cost-n.ppm intercept
-emmeans(ncost.soy, ~shade.cover,
-        var = "n.ppm",at = list(n.ppm = 0,
-                                shade.cover = c(0, 30, 50, 80)),
+## For back-transformed intercept
+emmeans(ncost.soy, 
+        ~shade.cover,
+        var = "n.ppm",
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)),
         type = "response")
 
 ###########################################################
@@ -84,8 +90,8 @@ emmeans(ncost.soy, ~shade.cover,
 ###########################################################
 df$n.cost[c(44, 271, 275, 331)] <- NA
 
-ncost.cotton <- lmer(log(n.cost) ~ shade.cover * n.ppm + (1 | block), 
-                  data = subset(df, spp == "Cotton"))
+ncost.cotton <- lmer(log(n.cost) ~ shade.cover * n.ppm + (1 | block),
+                     data = subset(df, spp == "Cotton"))
 
 # Check normality assumptions
 plot(ncost.cotton)
@@ -99,22 +105,31 @@ summary(ncost.cotton)
 Anova(ncost.cotton)
 
 # Pairwise comparisons
-## For n.cost-n.ppm slope
-emtrends(ncost.cotton, ~shade.cover, 
-         var = "n.ppm",
-         at = list(shade.cover = c(0, 30, 50, 80)),
-         options = list(),
-         transform = "response")
-
-## For n.cost-n.ppm slope significance level
-test(emtrends(ncost.cotton, ~shade.cover, 
-         var = "n.ppm",
-         at = list(shade.cover = c(0, 30, 50, 80)),
-         options = list(),
-         type = "response"))
+## For slope
+test(emtrends(ncost.cotton, 
+              ~shade.cover,
+              var = "n.ppm",
+              at = list(shade.cover = c(0, 30, 50, 80)),
+              options = list()))
 
 ## For intercept
-emmeans(ncost.cotton, ~shade.cover,
+emmeans(ncost.cotton, 
+        ~shade.cover,
+        var = "n.ppm",
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)))
+
+## For back-transformed slope
+test(emtrends(ncost.cotton, 
+              ~shade.cover, 
+              var = "n.ppm",
+              at = list(shade.cover = c(0, 30, 50, 80)),
+              options = list(),
+              transform = "response"))
+
+## For back-transformed intercept
+emmeans(ncost.cotton, 
+        ~shade.cover,
         var = "n.ppm",
         at = list(n.ppm = 0,
                   shade.cover = c(0, 30, 50, 80)),
@@ -124,7 +139,7 @@ emmeans(ncost.cotton, ~shade.cover,
 # Whole plant nitrogen mass (g N) - G. max
 ###########################################################
 n.acq.soy <- lmer(sqrt(n.acq) ~ shade.cover * n.ppm + (1 | block), 
-                   data = subset(df, spp == "Soybean"))
+                  data = subset(df, spp == "Soybean"))
 
 # Check normality assumptions
 plot(n.acq.soy)
@@ -138,22 +153,30 @@ summary(n.acq.soy)
 Anova(n.acq.soy)
 
 # Pairwise comparisons
-## For n.cost-n.ppm slope
-emtrends(n.acq.soy, ~shade.cover,
+## For slope
+test(emtrends(n.acq.soy, 
+              ~shade.cover,
               var = "n.ppm", 
               at = list(shade.cover = c(0, 30, 50, 80)), 
-              options = list(),
-              transform = "response")
-
-## For n.cost-n.ppm slope significance level
-test(emtrends(n.acq.soy, ~shade.cover,
-         var = "n.ppm", 
-         at = list(shade.cover = c(0, 30, 50, 80)), 
-         options = list(),
-         type = "response"))
+              options = list()))
 
 ## For intercept
-emmeans(n.acq.soy, ~shade.cover,
+emmeans(n.acq.soy, 
+        ~shade.cover,
+        var = "n.ppm",
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)))
+
+## For back=transformed slope
+test(emtrends(n.acq.soy, 
+              ~shade.cover,
+              var = "n.ppm", 
+              at = list(shade.cover = c(0, 30, 50, 80)), 
+              options = list()))
+
+## For back-transformed intercept
+emmeans(n.acq.soy, 
+        ~shade.cover,
         var = "n.ppm",
         at = list(n.ppm = 0,
                   shade.cover = c(0, 30, 50, 80)),
@@ -165,7 +188,7 @@ emmeans(n.acq.soy, ~shade.cover,
 df$n.acq[c(286)] <- NA
 
 n.acq.cotton <- lmer(log(n.acq) ~ shade.cover * n.ppm + (1 | block), 
-                  data = subset(df, spp == "Cotton"))
+                     data = subset(df, spp == "Cotton"))
 
 # Check normality assumptions
 plot(n.acq.cotton)
@@ -179,22 +202,31 @@ summary(n.acq.cotton)
 Anova(n.acq.cotton)
 
 # Pairwise comparisons
-## For n.acq-n.ppm slope
-emtrends(n.acq.cotton, ~ shade.cover,
+## For slope
+test(emtrends(n.acq.cotton, 
+              ~shade.cover,
+              var = "n.ppm", 
+              at = list(shade.cover = c(0, 30, 50, 80)), 
+              options = list()))
+
+## For intercept
+emmeans(n.acq.cotton, 
+        ~shade.cover,
+        var = "n.ppm",
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)))
+
+## For back-transformed slope
+test(emtrends(n.acq.cotton, 
+              ~ shade.cover,
               var = "n.ppm", 
               at = list(shade.cover = c(0, 30, 50, 80)), 
               options = list(),
-              transform = "response")
+              transform = "response"))
 
-## For n.acq-n.ppm slope significance level
-test(emtrends(n.acq.cotton, ~ shade.cover,
-         var = "n.ppm", 
-         at = list(shade.cover = c(0, 30, 50, 80)), 
-         options = list(),
-         type = "response"))
-
-## For intercept
-emmeans(n.acq.cotton, ~shade.cover,
+## For back-transformed intercept
+emmeans(n.acq.cotton, 
+        ~shade.cover,
         var = "n.ppm",
         at = list(n.ppm = 0,
                   shade.cover = c(0, 30, 50, 80)),
@@ -206,7 +238,8 @@ emmeans(n.acq.cotton, ~shade.cover,
 df$root.carbon.mass[c(86)] <- NA
 
 root.carbon.soy <- lmer(sqrt(root.carbon.mass) ~ shade.cover * n.ppm +
-                      (1 | block), data = subset(df, spp == "Soybean"))
+                                (1 | block), 
+                        data = subset(df, spp == "Soybean"))
 
 # Check normality assumptions
 plot(root.carbon.soy)
@@ -220,22 +253,32 @@ summary(root.carbon.soy)
 Anova(root.carbon.soy)
 
 # Pairwise comparisons
-## For root.carbon-n.ppm slope
-emtrends(root.carbon.soy, ~shade.cover,
+## For slope
+test(emtrends(root.carbon.soy, 
+              ~shade.cover,
               var = "n.ppm",
               at = list(shade.cover = c(0, 30, 50, 80)),
-              options = list(),
-              transform = "response")
-
-## For root.carbon-n.ppm slope significance level
-test(emtrends(root.carbon.soy, ~shade.cover,
-              var = "n.ppm",
-              at = list(shade.cover = c(0, 30, 50, 80)),
-              options = list(),
-              type = "response"))
+              options = list()))
 
 ## For intercept
-emmeans(root.carbon.soy, ~shade.cover,
+emmeans(root.carbon.soy, 
+        ~shade.cover,
+        var = "n.ppm",
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)),
+        options = list())
+
+## For back-transformed slope
+test(emtrends(root.carbon.soy, 
+              ~shade.cover,
+              var = "n.ppm",
+              at = list(shade.cover = c(0, 30, 50, 80)),
+              options = list(),
+              transform = "response"))
+
+## For back-transformed intercept
+emmeans(root.carbon.soy, 
+        ~shade.cover,
         var = "n.ppm",
         at = list(n.ppm = 0,
                   shade.cover = c(0, 30, 50, 80)),
@@ -248,7 +291,8 @@ emmeans(root.carbon.soy, ~shade.cover,
 df$root.carbon.mass[44] <- NA
 
 root.carbon.cotton <- lmer(sqrt(root.carbon.mass) ~ shade.cover * n.ppm +
-                      (1 | block), data = subset(df, spp == "Cotton"))
+                                   (1 | block), 
+                           data = subset(df, spp == "Cotton"))
 
 # Check normality assumptions
 plot(root.carbon.cotton)
@@ -262,27 +306,36 @@ summary(root.carbon.cotton)
 Anova(root.carbon.cotton)
 
 # Pairwise comparisons
-## For root.carbon-n.ppm slope
-emtrends(root.carbon.cotton, ~shade.cover,
-         var = "n.ppm",
-         at = list(shade.cover = c(0, 30, 50, 80)),
-         options = list(),
-         transform = "response")
+## For slope
+test(emtrends(root.carbon.cotton, 
+              ~shade.cover,
+              var = "n.ppm",
+              at = list(shade.cover = c(0, 30, 50, 80)),
+              options = list()))
 
-## For root.carbon-n.ppm significance level
-test(emtrends(root.carbon.cotton, ~shade.cover,
+## For intercept
+emmeans(root.carbon.cotton, 
+        ~shade.cover,
+        var = "n.ppm",
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)),
+        options = list())
+
+## For back-transformed slope
+test(emtrends(root.carbon.cotton, 
+              ~shade.cover,
               var = "n.ppm",
               at = list(shade.cover = c(0, 30, 50, 80)),
               options = list(),
-              type = "response"))
+              transform = "response"))
 
-## For intercept
+## For back-transformed intercept
 emmeans(root.carbon.cotton, ~shade.cover,
         var = "n.ppm",
         at = list(n.ppm = 0,
                   shade.cover = c(0, 30, 50, 80)),
         options = list(),
-        type = "response")
+        transform = "response")
 
 ###########################################################
 # Root nodule weight (g)
@@ -304,22 +357,32 @@ summary(nod.wgt)
 Anova(nod.wgt)
 
 # Pairwise comparisons
-## For nod.wgt-n.ppm slope
-emtrends(nod.wgt, ~shade.cover, 
+## For slope
+test(emtrends(nod.wgt, 
+              ~shade.cover, 
               var = "n.ppm", 
               at = list(shade.cover = c(0, 30, 50, 80)), 
-              options = list(),
-              transform = "response")
-
-## For nod.wgt-n.ppm slope significance level
-test(emtrends(nod.wgt, ~shade.cover, 
-              var = "n.ppm", 
-              at = list(shade.cover = c(0, 30, 50, 80)), 
-              options = list(),
-              type = "response"))
+              options = list()))
 
 ## For intercept
-emmeans(nod.wgt, ~shade.cover,
+emmeans(nod.wgt, 
+        ~shade.cover,
+        var = "n.ppm", 
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)),
+        options = list())
+
+## For back-transformed slope
+test(emtrends(nod.wgt, 
+              ~shade.cover, 
+              var = "n.ppm", 
+              at = list(shade.cover = c(0, 30, 50, 80)), 
+              options = list(),
+              transform = "response"))
+
+## For back-transformed intercept
+emmeans(nod.wgt, 
+        ~shade.cover,
         var = "n.ppm", 
         at = list(n.ppm = 0,
                   shade.cover = c(0, 30, 50, 80)),
@@ -329,8 +392,8 @@ emmeans(nod.wgt, ~shade.cover,
 ###########################################################
 # Root nodule : root biomass ratio
 ###########################################################
-nod.root <- lmer(sqrt(nod.root.ratio) ~ shade.cover * n.ppm + (1 | block), 
-                data = subset(df, spp == "Soybean"))
+nod.root <- lmer(sqrt(nod.root.ratio) ~ shade.cover * n.ppm + (1 | block),
+                 data = subset(df, spp == "Soybean"))
 
 # Check normality assumptions
 plot(nod.root)
@@ -344,24 +407,34 @@ summary(nod.root)
 Anova(nod.root)
 
 # Pairwise comparisons
-## For nod.root-n.ppm slope
-test(emtrends(nod.root, ~shade.cover,
+## For slope
+test(emtrends(nod.root, 
+              ~shade.cover,
+              var = "n.ppm",
+              at = list(shade.cover = c(0, 30, 50, 80)),
+              options = list()))
+
+## For intercept
+emmeans(nod.root, 
+        ~shade.cover,
+        var = "n.ppm",
+        at = list(n.ppm = 0,
+                    shade.cover = c(0, 30, 50, 80)),
+        options = list())
+
+## For back-transformed slope
+test(emtrends(nod.root, 
+              ~shade.cover,
               var = "n.ppm",
               at = list(shade.cover = c(0, 30, 50, 80)),
               options = list(),
               transform = "response"))
 
-## For nod.root-n.ppm slope significance level
-test(emtrends(nod.root, ~shade.cover,
-              var = "n.ppm",
-              at = list(shade.cover = c(0, 30, 50, 80)),
-              options = list(),
-              type = "response"))
-
-## For intercept
-emmeans(nod.root, ~shade.cover,
+## For back-transformed intercept
+emmeans(nod.root, 
+        ~shade.cover,
         var = "n.ppm",
         at = list(n.ppm = 0,
-                    shade.cover = c(0, 30, 50, 80)),
+                  shade.cover = c(0, 30, 50, 80)),
         options = list(),
         type = "response")

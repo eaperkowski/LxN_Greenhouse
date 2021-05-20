@@ -48,6 +48,12 @@ emmeans(bvr.soy, ~n.ppm * shade.cover,
         at = list(n.ppm = 0,
                   shade.cover = c(0, 30, 50, 80)))
 
+## For back-transformed bvr:n.ppm intercepts
+emmeans(bvr.soy, ~n.ppm * shade.cover,
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)),
+        type = "response")
+
 ## What was the marginal mean for 0% shade:630 ppm N combo?
 emmeans(bvr.soy, ~n.ppm*shade.cover,
         at = list(n.ppm = 630,
@@ -71,28 +77,33 @@ summary(bvr.cotton)
 Anova(bvr.cotton)
 
 # Pairwise comparisons
-## For bvr-n.ppm slope
+## For bvr-n.ppm slope (figs only)
 emtrends(bvr.cotton, ~shade.cover,
-              var = "n.ppm",
-              at = list(shade.cover = c(0, 30, 50, 80)),
-              options = list(), 
-              transform = "response")
+         var = "n.ppm",
+         at = list(shade.cover = c(0, 30, 50, 80)),
+         options = list(),
+         transform = "response")
+
 ## For bvr-n.ppm slope significance level
 test(emtrends(bvr.cotton, ~shade.cover,
               var = "n.ppm",
               at = list(shade.cover = c(0, 30, 50, 80)),
-              options = list(), 
-              type = "response"))
+              options = list()))
+
+## For back-transformed bvr-n.ppm intercept
+emmeans(bvr.cotton, ~n.ppm * shade.cover,
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)),
+        type = "response")
 
 ## For bvr-n.ppm intercept
 emmeans(bvr.cotton, ~n.ppm * shade.cover,
-                   at = list(n.ppm = 0,
-                             shade.cover = c(0, 30, 50, 80)),
-        type = "response")
+        at = list(n.ppm = 0,
+                  shade.cover = c(0, 30, 50, 80)))
+
 
 ## What was the marginal mean for 0% shade:630 ppm N combo?
 emmeans(bvr.cotton, ~n.ppm*shade.cover,
         at = list(n.ppm = 630,
                   shade.cover = 0),
         type = "response")
-
