@@ -14,14 +14,9 @@ library(gtable)
 library(grid)
 
 ###############################################################################
-## source proportion N functions
-###############################################################################
-source('../functions/propN_funcs.R')
-
-###############################################################################
 ## load data
 ###############################################################################
-data = read.csv('../data_sheets/LxN_physiology_data.csv')
+data <- read.csv('../data_sheets/LxN_phys_data.csv')
 head(data)
 
 ###############################################################################
@@ -55,106 +50,9 @@ multiplot <- function(..., plotlist=NULL, cols) {
 }
 
 ###############################################################################
-## Define function to standardize Vcmax/Jmax to a temperature
-###############################################################################
-calc_vcmax_tresp_mult = function(tleaf, tmean, tref){
-  
-  temp = tleaf + 273.15
-  Ha= 71513
-  Hd= 200000
-  adelS= 668.39
-  bdelS= -1.07
-  tmeanK=tmean+273.15
-  trefK=tref+273.15
-  R=8.314
-  kbeg=exp(Ha*(temp-trefK)/(trefK*R*temp))
-  kend=((1+exp((trefK*(adelS+bdelS*tmean)-Hd)/(trefK*R)))/(1+exp((temp*(adelS+bdelS*tmean)-Hd)/(temp*R))))
-  kbeg*kend
-  
-}
-
-calc_jmax_tresp_mult = function(tleaf, tmean, tref){
-  
-  temp = tleaf + 273.15
-  Ha= 49884
-  Hd= 200000
-  adelS= 659.7
-  bdelS= -0.75
-  tmeanK=tmean+273.15
-  trefK=tref+273.15
-  R=8.314
-  kbeg=exp(Ha*(temp-trefK)/(trefK*R*temp))
-  kend=((1+exp((trefK*(adelS+bdelS*tmean)-Hd)/(trefK*R)))/(1+exp((temp*(adelS+bdelS*tmean)-Hd)/(temp*R))))
-  kbeg*kend
-  
-}
-
-###############################################################################
-## Calculate Vcmax/Jmax standardized to 25degC, then calculate Jmax25:Vcmax25
-###############################################################################
-data$vcmax25 = data$Vcmax / calc_vcmax_tresp_mult(data$Tleaf, 32, 25)
-data$jmax25 = data$Jmax / calc_jmax_tresp_mult(data$Tleaf, 32, 25)
-data$jv25 <- data$jmax25 / data$vcmax25
-
-###############################################################################
-## Redefine shade and fertilizer cols to be numeric
-###############################################################################
-data$shade[data$LightLevel == 'eighty'] <- '80'
-data$shade[data$LightLevel == 'fifty'] <- '50'
-data$shade[data$LightLevel == 'thirty'] <- '30'
-data$shade[data$LightLevel == 'zero'] <- '0'
-
-data$fertilizer[data$N == '0 ppm'] <- '0'
-data$fertilizer[data$N == '70 ppm'] <- '70'
-data$fertilizer[data$N == '210 ppm'] <- '210'
-data$fertilizer[data$N == '630 ppm'] <- '630'
-
-data$fertilizer_cont <- as.numeric(data$fertilizer)
-data$shade_cont <- as.numeric(data$shade)
-
-###############################################################################
-## Calculate Marea, Nmass, and Narea
-###############################################################################
-data$marea <- (1 / data$sla) * 10000 # lma in g m-2
-data$nmass <- data$nitrogen / 100
-data$narea <- data$marea * data$nmass
-data$chlorophyll_area <- data$ug.cm2
-data$tla <- data$total.leaf.area
-data$biomass <- data$Tbio
-data$vcmax25_narea = data$vcmax25 / data$narea
-data$jmax25_narea = data$jmax25 / data$narea
-data$chlorophyll_area_narea = data$chlorophyll_area / data$narea
-
-###############################################################################
-## calculate proportion of N to Rubisco, bioenergetics, and light harvesting
-###############################################################################
-data$chlorophyll_mmol.g <- data$mmol.g / 1000 # corrected because I think the units were wrong
-data$chlorophyll_mmol.m2 <- data$chlorophyll_mmol.g * data$marea
-data$chlorophyll_mmol.m2_narea <- data$chlorophyll_mmol.m2 / data$narea
-
-### proportion of N in rubisco
-data$propN_rubisco <- p_rubisco(vcmax25 = data$vcmax25, 
-                                narea = data$narea)
-hist(data$propN_rubisco)
-
-### proportion of N in bioenergetics
-data$propN_bioenergetics <- p_bioenergetics(jmax25 = data$jmax25, 
-                                            narea = data$narea)
-hist(data$propN_bioenergetics)
-
-### proportion of N in light harvesting
-data$propN_lightharvesting <- p_lightharvesting(chlorophyll = data$chlorophyll_mmol.g,
-                                                nmass = data$nmass)
-hist(data$propN_lightharvesting)
-
-### proportion of N in photosynthesis
-data$propN_photosynthesis = data$propN_rubisco + data$propN_bioenergetics + data$propN_lightharvesting
-hist(data$propN_photosynthesis)
-
-###############################################################################
 ## Linear mixed-effects model for Marea
 ###############################################################################
-marea_lmer <- lmer(log(marea) ~ spp * shade_cont * fertilizer_cont + (1| block), data = data)
+marea_lmer <- lmer(log(marea) ~ spp * shade.cover * n.ppm + (1 | block), data = data)
 
 ## Normality assumptions
 plot(resid(marea_lmer) ~ fitted(marea_lmer))
@@ -165,15 +63,15 @@ Anova(marea_lmer)
 
 ## Pairwise comparisons
 emmeans(marea_lmer, ~spp)
-test(emtrends(marea_lmer, ~ spp, var = 'shade_cont'))
-cld(emtrends(marea_lmer, ~ spp, var = 'shade_cont'))
+test(emtrends(marea_lmer, ~ spp, var = 'shade.cover'))
+cld(emtrends(marea_lmer, ~ spp, var = 'shade.cover'))
 ### marea higher in cotton
 ### marea decreases with shading
 
 ###############################################################################
 ## Linear mixed-effects model for Nmass
 ###############################################################################
-nmass_lmer <- lmer(log(nmass) ~ spp * shade_cont * fertilizer_cont + (1| block), data = data)
+nmass_lmer <- lmer(log(nmass) ~ spp * shade.cover * n.ppm + (1| block), data = data)
 
 ## Normality assumptions
 plot(resid(nmass_lmer) ~ fitted(nmass_lmer))
@@ -183,29 +81,29 @@ summary(nmass_lmer)
 Anova(nmass_lmer)
 
 ## Pairwise comparisons
-test(emtrends(nmass_lmer, ~ spp, var = 'fertilizer_cont',
-              at = list(shade_cont = c(0))))
-test(emtrends(nmass_lmer, ~ spp, var = 'fertilizer_cont',
-              at = list(shade_cont = c(30))))
-test(emtrends(nmass_lmer, ~ spp, var = 'fertilizer_cont',
-              at = list(shade_cont = c(50))))
-test(emtrends(nmass_lmer, ~ spp, var = 'fertilizer_cont',
-              at = list(shade_cont = c(80))))
-test(emtrends(nmass_lmer, ~ spp, var = 'shade_cont',
-              at = list(fertilizer_cont = c(0))))
-test(emtrends(nmass_lmer, ~ spp, var = 'shade_cont',
-              at = list(fertilizer_cont = c(70))))
-test(emtrends(nmass_lmer, ~ spp, var = 'shade_cont',
-              at = list(fertilizer_cont = c(210))))
-test(emtrends(nmass_lmer, ~ spp, var = 'shade_cont',
-              at = list(fertilizer_cont = c(630))))
+test(emtrends(nmass_lmer, ~ spp, var = 'n.ppm',
+              at = list(shade.cover = c(0))))
+test(emtrends(nmass_lmer, ~ spp, var = 'n.ppm',
+              at = list(shade.cover = c(30))))
+test(emtrends(nmass_lmer, ~ spp, var = 'n.ppm',
+              at = list(shade.cover = c(50))))
+test(emtrends(nmass_lmer, ~ spp, var = 'n.ppm',
+              at = list(shade.cover = c(80))))
+test(emtrends(nmass_lmer, ~ spp, var = 'shade.cover',
+              at = list(n.ppm = c(0))))
+test(emtrends(nmass_lmer, ~ spp, var = 'shade.cover',
+              at = list(n.ppm = c(70))))
+test(emtrends(nmass_lmer, ~ spp, var = 'shade.cover',
+              at = list(n.ppm = c(210))))
+test(emtrends(nmass_lmer, ~ spp, var = 'shade.cover',
+              at = list(n.ppm = c(630))))
 ### positive fertilizer effect for cotton at all shade levels
 ### no fertilizer effect for soybean at any shade level
 
 ###############################################################################
 ## Linear mixed-effects model for Narea
 ###############################################################################
-narea_lmer <- lmer(log(narea) ~ spp * shade_cont * fertilizer_cont + (1| block), data = data)
+narea_lmer <- lmer(log(narea) ~ spp * shade.cover * n.ppm + (1| block), data = data)
 
 ## Normality assumptions
 plot(resid(narea_lmer) ~ fitted(narea_lmer))
@@ -215,31 +113,31 @@ summary(narea_lmer)
 Anova(narea_lmer)
 
 ## Pairwise comparisons
-test(emtrends(narea_lmer, ~ spp, var = 'fertilizer_cont'))
-cld(emtrends(narea_lmer, ~ spp, var = 'fertilizer_cont'))
-test(emtrends(narea_lmer, ~ spp, var = 'fertilizer_cont',
-              at = list(shade_cont = c(0))))
-test(emtrends(narea_lmer, ~ spp, var = 'fertilizer_cont',
-              at = list(shade_cont = c(30))))
-test(emtrends(narea_lmer, ~ spp, var = 'fertilizer_cont',
-              at = list(shade_cont = c(50))))
-test(emtrends(narea_lmer, ~ spp, var = 'fertilizer_cont',
-              at = list(shade_cont = c(80))))
-test(emtrends(narea_lmer, ~ 1, var = 'fertilizer_cont',
-              at = list(shade_cont = c(0))))
-test(emtrends(narea_lmer, ~ 1, var = 'fertilizer_cont',
-              at = list(shade_cont = c(30))))
-test(emtrends(narea_lmer, ~ 1, var = 'fertilizer_cont',
-              at = list(shade_cont = c(50))))
-test(emtrends(narea_lmer, ~ 1, var = 'fertilizer_cont',
-              at = list(shade_cont = c(80))))
+test(emtrends(narea_lmer, ~ spp, var = "n.ppm"))
+cld(emtrends(narea_lmer, ~ spp, var = "n.ppm"))
+test(emtrends(narea_lmer, ~ spp, var = "n.ppm",
+              at = list(shade.cover = c(0))))
+test(emtrends(narea_lmer, ~ spp, var = "n.ppm",
+              at = list(shade.cover = c(30))))
+test(emtrends(narea_lmer, ~ spp, var = "n.ppm",
+              at = list(shade.cover = c(50))))
+test(emtrends(narea_lmer, ~ spp, var = "n.ppm",
+              at = list(shade.cover = c(80))))
+test(emtrends(narea_lmer, ~ 1, var = "n.ppm",
+              at = list(shade.cover = c(0))))
+test(emtrends(narea_lmer, ~ 1, var = "n.ppm",
+              at = list(shade.cover = c(30))))
+test(emtrends(narea_lmer, ~ 1, var = "n.ppm",
+              at = list(shade.cover = c(50))))
+test(emtrends(narea_lmer, ~ 1, var = "n.ppm",
+              at = list(shade.cover = c(80))))
 ### positive effect of fertilizer for both, stronger in cotton
 ### positive effect of fertilizer diminishes at lowest light in soybean
 
 ###############################################################################
 ## Linear mixed-effects model for Vcmax25
 ###############################################################################
-vcmax25_lmer <- lmer(log(vcmax25) ~ spp * shade_cont * fertilizer_cont + (1| block), data = data)
+vcmax25_lmer <- lmer(log(vcmax25) ~ spp * shade.cover * n.ppm + (1| block), data = data)
 
 ## Normality assumptions
 plot(resid(vcmax25_lmer) ~ fitted(vcmax25_lmer))
@@ -249,16 +147,16 @@ summary(vcmax25_lmer)
 Anova(vcmax25_lmer)
 
 ## Pairwise comparisons
-test(emtrends(vcmax25_lmer, ~ 1, var = 'shade_cont'))
-test(emtrends(vcmax25_lmer, ~ spp, var = 'fertilizer_cont'))
-cld(emtrends(vcmax25_lmer, ~ spp, var = 'fertilizer_cont'))
+test(emtrends(vcmax25_lmer, ~ 1, var = "shade.cover"))
+test(emtrends(vcmax25_lmer, ~ spp, var = "n.ppm"))
+cld(emtrends(vcmax25_lmer, ~ spp, var = "n.ppm"))
 ### negative effect of shading throughout
 ### positive effect of fertilizer in cotton, but not soybean
 
 ###############################################################################
 ## Linear mixed-effects model for Jmax25
 ###############################################################################
-jmax25_lmer <- lmer(log(jmax25) ~ spp * shade_cont * fertilizer_cont + (1| block), data = data)
+jmax25_lmer <- lmer(log(jmax25) ~ spp * shade.cover * n.ppm + (1| block), data = data)
 
 ## Normality assumptions
 plot(resid(jmax25_lmer) ~ fitted(jmax25_lmer))
@@ -268,17 +166,17 @@ summary(jmax25_lmer)
 Anova(jmax25_lmer)
 
 ## Pairwise comparisons
-test(emtrends(jmax25_lmer, ~ spp, var = 'shade_cont'))
-cld(emtrends(jmax25_lmer, ~ spp, var = 'shade_cont'))
-test(emtrends(jmax25_lmer, ~ spp, var = 'fertilizer_cont'))
-cld(emtrends(jmax25_lmer, ~ spp, var = 'fertilizer_cont'))
+test(emtrends(jmax25_lmer, ~ spp, var = "shade.cover"))
+cld(emtrends(jmax25_lmer, ~ spp, var = "shade.cover"))
+test(emtrends(jmax25_lmer, ~ spp, var = "n.ppm"))
+cld(emtrends(jmax25_lmer, ~ spp, var = "n.ppm"))
 ### negative effect of shading throughout, stronger in cotton
 ### positive effect of fertilizer in cotton, but not soybean
 
 ###############################################################################
 ## Linear mixed-effects model for Jmax25:Vcmax25
 ###############################################################################
-jv25_lmer <- lmer((jv25) ~ spp * shade_cont * fertilizer_cont + (1| block), data = data)
+jv25_lmer <- lmer((jv25) ~ spp * shade.cover * n.ppm + (1| block), data = data)
 
 ## Normality assumptions
 plot(resid(jv25_lmer) ~ fitted(jv25_lmer))
@@ -294,7 +192,7 @@ cld(emmeans(jv25_lmer, ~spp))
 ###############################################################################
 ## Linear mixed-effects model for Chlorophyll content per leaf area
 ###############################################################################
-chlorophyll_mmol.m2_lmer <- lmer(log(chlorophyll_mmol.m2) ~ spp * shade_cont * fertilizer_cont + (1| block), data = data)
+chlorophyll_mmol.m2_lmer <- lmer(log(chlorophyll_mmol.m2) ~ spp * shade.cover * n.ppm + (1| block), data = data)
 
 ## Normality assumptions
 plot(resid(chlorophyll_mmol.m2_lmer) ~ fitted(chlorophyll_mmol.m2_lmer))
@@ -304,9 +202,9 @@ summary(chlorophyll_mmol.m2_lmer)
 Anova(chlorophyll_mmol.m2_lmer)
 
 ## Pairwise comparisons
-test(emtrends(chlorophyll_mmol.m2_lmer, ~ 1, var = 'shade_cont'))
-test(emtrends(chlorophyll_mmol.m2_lmer, ~ spp, var = 'fertilizer_cont'))
-cld(emtrends(chlorophyll_mmol.m2_lmer, ~ spp, var = 'fertilizer_cont'))
+test(emtrends(chlorophyll_mmol.m2_lmer, ~ 1, var = "shade.cover"))
+test(emtrends(chlorophyll_mmol.m2_lmer, ~ spp, var = "n.ppm"))
+cld(emtrends(chlorophyll_mmol.m2_lmer, ~ spp, var = "n.ppm"))
 ### reduced with shade in both
 ### positive effect of fertilizer in cotton, but not soybean
 
@@ -318,16 +216,16 @@ cld(emtrends(chlorophyll_mmol.m2_lmer, ~ spp, var = 'fertilizer_cont'))
 # plot(resid(vcmax25_narea_lmer) ~ fitted(vcmax25_narea_lmer))
 # summary(vcmax25_narea_lmer)
 # Anova(vcmax25_narea_lmer)
-# test(emtrends(vcmax25_narea_lmer, ~ 1, var = 'shade_cont'))
-# test(emtrends(vcmax25_narea_lmer, ~ spp, var = 'fertilizer_cont'))
-# cld(emtrends(vcmax25_narea_lmer, ~ spp, var = 'fertilizer_cont'))
-# test(emtrends(vcmax25_narea_lmer, ~ 1, var = 'fertilizer_cont',
+# test(emtrends(vcmax25_narea_lmer, ~ 1, var = "shade.cover))
+# test(emtrends(vcmax25_narea_lmer, ~ spp, var = "n.ppm))
+# cld(emtrends(vcmax25_narea_lmer, ~ spp, var = "n.ppm))
+# test(emtrends(vcmax25_narea_lmer, ~ 1, var = "n.ppm,
 #               at = list(shade_cont = 0)))
-# test(emtrends(vcmax25_narea_lmer, ~ 1, var = 'fertilizer_cont',
+# test(emtrends(vcmax25_narea_lmer, ~ 1, var = "n.ppm,
 #               at = list(shade_cont = 30)))
-# test(emtrends(vcmax25_narea_lmer, ~ 1, var = 'fertilizer_cont',
+# test(emtrends(vcmax25_narea_lmer, ~ 1, var = "n.ppm,
 #               at = list(shade_cont = 50)))
-# test(emtrends(vcmax25_narea_lmer, ~ 1, var = 'fertilizer_cont',
+# test(emtrends(vcmax25_narea_lmer, ~ 1, var = "n.ppm,
 #               at = list(shade_cont = 80)))
 # ### negative effect of shading throughout
 # ### negative effect of fertilizer, stronger in cotton
@@ -337,16 +235,16 @@ cld(emtrends(chlorophyll_mmol.m2_lmer, ~ spp, var = 'fertilizer_cont'))
 # plot(resid(jmax25_narea_lmer) ~ fitted(jmax25_narea_lmer))
 # summary(jmax25_narea_lmer)
 # Anova(jmax25_narea_lmer)
-# test(emtrends(jmax25_narea_lmer, ~ 1, var = 'shade_cont'))
-# test(emtrends(jmax25_narea_lmer, ~ spp, var = 'fertilizer_cont'))
-# cld(emtrends(jmax25_narea_lmer, ~ spp, var = 'fertilizer_cont'))
-# test(emtrends(jmax25_narea_lmer, ~ 1, var = 'fertilizer_cont',
+# test(emtrends(jmax25_narea_lmer, ~ 1, var = "shade.cover))
+# test(emtrends(jmax25_narea_lmer, ~ spp, var = "n.ppm))
+# cld(emtrends(jmax25_narea_lmer, ~ spp, var = "n.ppm))
+# test(emtrends(jmax25_narea_lmer, ~ 1, var = "n.ppm,
 #               at = list(shade_cont = 0)))
-# test(emtrends(jmax25_narea_lmer, ~ 1, var = 'fertilizer_cont',
+# test(emtrends(jmax25_narea_lmer, ~ 1, var = "n.ppm,
 #               at = list(shade_cont = 30)))
-# test(emtrends(jmax25_narea_lmer, ~ 1, var = 'fertilizer_cont',
+# test(emtrends(jmax25_narea_lmer, ~ 1, var = "n.ppm,
 #               at = list(shade_cont = 50)))
-# test(emtrends(jmax25_narea_lmer, ~ 1, var = 'fertilizer_cont',
+# test(emtrends(jmax25_narea_lmer, ~ 1, var = "n.ppm,
 #               at = list(shade_cont = 80)))
 # ### negative effect of shading throughout
 # ### negative effect of fertilizer, stronger in cotton
@@ -356,15 +254,15 @@ cld(emtrends(chlorophyll_mmol.m2_lmer, ~ spp, var = 'fertilizer_cont'))
 # plot(resid(chlorophyll_mmol.m2_narea_lmer) ~ fitted(chlorophyll_mmol.m2_narea_lmer))
 # summary(chlorophyll_mmol.m2_narea_lmer)
 # Anova(chlorophyll_mmol.m2_narea_lmer)
-# test(emtrends(chlorophyll_mmol.m2_narea_lmer, ~ 1, var = 'shade_cont'))
-# test(emtrends(chlorophyll_mmol.m2_narea_lmer, ~ 1, var = 'fertilizer_cont'))
+# test(emtrends(chlorophyll_mmol.m2_narea_lmer, ~ 1, var = "shade.cover))
+# test(emtrends(chlorophyll_mmol.m2_narea_lmer, ~ 1, var = "n.ppm))
 # ### negative effect of shading throughout
 # ### negative effect of fertilizer throughout
 
 ###############################################################################
 ## Linear mixed-effects model for proportion of leaf N in Rubisco
 ###############################################################################
-propN_rubisco_lmer <- lmer(propN_rubisco ~ spp * shade_cont * fertilizer_cont + (1| block), data = data)
+propN_rubisco_lmer <- lmer(propN_rubisco ~ spp * shade.cover * n.ppm + (1| block), data = data)
 
 ## Normality assumptions
 plot(resid(propN_rubisco_lmer) ~ fitted(propN_rubisco_lmer))
@@ -374,15 +272,15 @@ summary(propN_rubisco_lmer)
 Anova(propN_rubisco_lmer)
 
 ## Pairwise comparisons
-test(emtrends(propN_rubisco_lmer, ~ 1, var = 'shade_cont'))
-test(emtrends(propN_rubisco_lmer, ~ 1, var = 'fertilizer_cont'))
+test(emtrends(propN_rubisco_lmer, ~ 1, var = "shade.cover"))
+test(emtrends(propN_rubisco_lmer, ~ 1, var = "n.ppm"))
 ### reduction with shade
 ### reduction with fertilizer
 
 ###############################################################################
 ## Linear mixed-effects model for proportion of leaf N in bioenergetics
 ###############################################################################
-propN_bioenergetics_lmer <- lmer(propN_bioenergetics ~ spp * shade_cont * fertilizer_cont + (1| block), data = data)
+propN_bioenergetics_lmer <- lmer(propN_bioenergetics ~ spp * shade.cover * n.ppm + (1| block), data = data)
 
 ## Normality assumptions
 plot(resid(propN_bioenergetics_lmer) ~ fitted(propN_bioenergetics_lmer))
@@ -392,15 +290,15 @@ summary(propN_bioenergetics_lmer)
 Anova(propN_bioenergetics_lmer)
 
 ## Pairwise comparisons
-test(emtrends(propN_bioenergetics_lmer, ~ 1, var = 'shade_cont'))
-test(emtrends(propN_bioenergetics_lmer, ~ 1, var = 'fertilizer_cont'))
+test(emtrends(propN_bioenergetics_lmer, ~ 1, var = "shade.cover"))
+test(emtrends(propN_bioenergetics_lmer, ~ 1, var = "n.ppm"))
 ### reduction with shade
 ### reduction with fertilizer
 
 ###############################################################################
 ## Linear mixed-effects model for proportion of leaf N in light harvesting
 ###############################################################################
-propN_lightharvesting_lmer <- lmer(propN_lightharvesting ~ spp * shade_cont * fertilizer_cont + (1| block), data = data)
+propN_lightharvesting_lmer <- lmer(propN_lightharvesting ~ spp * shade.cover * n.ppm + (1| block), data = data)
 
 ## Normality assumptions
 plot(resid(propN_lightharvesting_lmer) ~ fitted(propN_lightharvesting_lmer))
@@ -410,15 +308,15 @@ summary(propN_lightharvesting_lmer)
 Anova(propN_lightharvesting_lmer)
 
 ## Pairwise comparisons
-test(emtrends(propN_lightharvesting_lmer, ~ 1, var = 'shade_cont'))
-test(emtrends(propN_lightharvesting_lmer, ~ 1, var = 'fertilizer_cont'))
+test(emtrends(propN_lightharvesting_lmer, ~ 1, var = "shade.cover"))
+test(emtrends(propN_lightharvesting_lmer, ~ 1, var = "n.ppm"))
 ### no effect of shade
 ### reduction with fertilizer
 
 ###############################################################################
 ## Linear mixed-effects model for proportion of leaf N in photosynthesis
 ###############################################################################
-propN_photosynthesis_lmer <- lmer(propN_photosynthesis ~ spp * shade_cont * fertilizer_cont + (1| block), data = data)
+propN_photosynthesis_lmer <- lmer(propN_photosynthesis ~ spp * shade.cover * n.ppm + (1| block), data = data)
 
 ## Normality assumptions
 plot(resid(propN_photosynthesis_lmer) ~ fitted(propN_photosynthesis_lmer))
@@ -428,15 +326,15 @@ summary(propN_photosynthesis_lmer)
 Anova(propN_photosynthesis_lmer)
 
 ## Pairwise comparisons
-test(emtrends(propN_photosynthesis_lmer, ~ 1, var = 'shade_cont'))
-test(emtrends(propN_photosynthesis_lmer, ~ 1, var = 'fertilizer_cont'))
+test(emtrends(propN_photosynthesis_lmer, ~ 1, var = "shade.cover"))
+test(emtrends(propN_photosynthesis_lmer, ~ 1, var = "n.ppm"))
 ### reduction with shade
 ### reduction with fertilizer
 
 ###############################################################################
 ## Linear mixed-effects model for total leaf area
 ###############################################################################
-tla_lmer <- lmer(log(tla) ~ spp * shade_cont * fertilizer_cont + (1| block), data = data)
+tla_lmer <- lmer(log(tla) ~ spp * shade.cover * n.ppm + (1| block), data = data)
 
 ## Normality assumptions
 plot(resid(tla_lmer) ~ fitted(tla_lmer))
@@ -446,17 +344,17 @@ summary(tla_lmer)
 Anova(tla_lmer)
 
 ## Pairwise comparisons
-test(emtrends(tla_lmer, ~ spp, var = 'shade_cont'))
-cld(emtrends(tla_lmer, ~ spp, var = 'shade_cont'))
-test(emtrends(tla_lmer, ~ 1, var = 'fertilizer_cont'))
-test(emtrends(tla_lmer, ~ 1, var = 'fertilizer_cont',
-             at = list(shade_cont = 0)))
-test(emtrends(tla_lmer, ~ 1, var = 'fertilizer_cont',
-              at = list(shade_cont = 30)))
-test(emtrends(tla_lmer, ~ 1, var = 'fertilizer_cont',
-              at = list(shade_cont = 50)))
-test(emtrends(tla_lmer, ~ 1, var = 'fertilizer_cont',
-              at = list(shade_cont = 80)))
+test(emtrends(tla_lmer, ~ spp, var = "shade.cover"))
+cld(emtrends(tla_lmer, ~ spp, var = "shade.cover"))
+test(emtrends(tla_lmer, ~ 1, var = "n.ppm"))
+test(emtrends(tla_lmer, ~ 1, var = "n.ppm",
+             at = list(shade.cover = 0)))
+test(emtrends(tla_lmer, ~ 1, var = "n.ppm",
+              at = list(shade.cover = 30)))
+test(emtrends(tla_lmer, ~ 1, var = "n.ppm",
+              at = list(shade.cover = 50)))
+test(emtrends(tla_lmer, ~ 1, var = "n.ppm",
+              at = list(shade.cover = 80)))
 ### reduced with shade in both, but to a greater degree in cotton
 ### increase with fertilizer
 ### ferilizer effect is slightly reduced with shading
@@ -464,7 +362,7 @@ test(emtrends(tla_lmer, ~ 1, var = 'fertilizer_cont',
 ###############################################################################
 ## Linear mixed-effects model for proportion of whole plant biomass
 ###############################################################################
-biomass_lmer <- lmer(log(biomass) ~ spp * shade_cont * fertilizer_cont + (1| block), data = data)
+biomass_lmer <- lmer(log(biomass) ~ spp * shade.cover * n.ppm + (1| block), data = data)
 
 ## Normality assumptions
 plot(resid(biomass_lmer) ~ fitted(biomass_lmer))
@@ -474,17 +372,17 @@ summary(biomass_lmer)
 Anova(biomass_lmer)
 
 ## Pairwise comparisons
-test(emtrends(biomass_lmer, ~ spp, var = 'shade_cont'))
-cld(emtrends(biomass_lmer, ~ spp, var = 'shade_cont'))
-test(emtrends(biomass_lmer, ~ 1, var = 'fertilizer_cont'))
-test(emtrends(biomass_lmer, ~ 1, var = 'fertilizer_cont',
-              at = list(shade_cont = 0)))
-test(emtrends(biomass_lmer, ~ 1, var = 'fertilizer_cont',
-              at = list(shade_cont = 30)))
-test(emtrends(biomass_lmer, ~ 1, var = 'fertilizer_cont',
-              at = list(shade_cont = 50)))
-test(emtrends(biomass_lmer, ~ 1, var = 'fertilizer_cont',
-              at = list(shade_cont = 80)))
+test(emtrends(biomass_lmer, ~ spp, var = "shade.cover"))
+cld(emtrends(biomass_lmer, ~ spp, var = "shade.cover"))
+test(emtrends(biomass_lmer, ~ 1, var = "n.ppm"))
+test(emtrends(biomass_lmer, ~ 1, var = "n.ppm",
+              at = list(shade.cover = 0)))
+test(emtrends(biomass_lmer, ~ 1, var = "n.ppm",
+              at = list(shade.cover = 30)))
+test(emtrends(biomass_lmer, ~ 1, var = "n.ppm",
+              at = list(shade.cover = 50)))
+test(emtrends(biomass_lmer, ~ 1, var = "n.ppm",
+              at = list(shade.cover = 80)))
 ### reduced with shade in both, but to a greater degree in cotton
 ### increase with fertilizer
 ### ferilizer effect is slightly reduced with shading
@@ -569,42 +467,42 @@ tla_biomass_anova_table_sub[tla_biomass_anova_table_sub<0.001] <- '<0.001'
 ## Create figure for Marea
 ###############################################################################
 test(emtrends(marea_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 0)))
+              var = "n.ppm", 
+              at = list(shade.cover = 0)))
 test(emtrends(marea_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 30)))
+              var = "n.ppm", 
+              at = list(shade.cover = 30)))
 test(emtrends(marea_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 50)))
+              var = "n.ppm", 
+              at = list(shade.cover = 50)))
 test(emtrends(marea_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 80)))
+              var = "n.ppm", 
+              at = list(shade.cover = 80)))
 
 marea_emtrend_0 <- summary(emtrends(marea_lmer, ~spp, 
-                                  var = 'fertilizer_cont', 
-                                  at = list(shade_cont = 0)))
+                                  var = "n.ppm", 
+                                  at = list(shade.cover = 0)))
 marea_emtrend_30 <- summary(emtrends(marea_lmer, ~spp, 
-                                  var = 'fertilizer_cont', 
-                                  at = list(shade_cont = 30)))
+                                  var = "n.ppm", 
+                                  at = list(shade.cover = 30)))
 marea_emtrend_50 <- summary(emtrends(marea_lmer, ~spp, 
-                                  var = 'fertilizer_cont', 
-                                  at = list(shade_cont = 50)))
+                                  var = "n.ppm", 
+                                  at = list(shade.cover = 50)))
 marea_emtrend_80 <- summary(emtrends(marea_lmer, ~spp, 
-                                  var = 'fertilizer_cont', 
-                                  at = list(shade_cont = 80)))
+                                  var = "n.ppm", 
+                                  at = list(shade.cover = 80)))
 marea_intercept_0 <- summary(emmeans(marea_lmer, ~spp, 
-                                     at = list(fertilizer_cont = 0, 
-                                               shade_cont = 0)))
+                                     at = list(n.ppm = 0, 
+                                               shade.cover = 0)))
 marea_intercept_30 <- summary(emmeans(marea_lmer, ~spp, 
-                                     at = list(fertilizer_cont = 0, 
-                                               shade_cont = 30)))
+                                     at = list(n.ppm = 0, 
+                                               shade.cover = 30)))
 marea_intercept_50 <- summary(emmeans(marea_lmer, ~spp, 
-                                      at = list(fertilizer_cont = 0, 
-                                                shade_cont = 50)))
+                                      at = list(n.ppm = 0, 
+                                                shade.cover = 50)))
 marea_intercept_80 <- summary(emmeans(marea_lmer, ~spp, 
-                                      at = list(fertilizer_cont = 0, 
-                                                shade_cont = 80)))
+                                      at = list(n.ppm = 0, 
+                                                shade.cover = 80)))
 
 marea_func_cotton_0 <- function(x){
   exp(marea_emtrend_0[1, 2] * x + marea_intercept_0[1, 2])}
@@ -626,9 +524,9 @@ marea_func_soybean_80 <- function(x){
 
 #### since there is no significant marea interction between shade and fertilizer, we plot a single line for each species
 marea_emtrend <- summary(emtrends(marea_lmer, ~spp, 
-                                  var = 'fertilizer_cont'))
+                                  var = "n.ppm"))
 marea_intercept <- summary(emmeans(marea_lmer, ~spp, 
-                                      at = list(fertilizer_cont = 0)))
+                                      at = list(n.ppm = 0)))
 
 marea_func_cotton <- function(x){
   exp(marea_emtrend[1, 2] * x + marea_intercept[1, 2])}
@@ -636,7 +534,7 @@ marea_func_cotton <- function(x){
 marea_func_soybean <- function(x){
   exp(marea_emtrend[2, 2] * x + marea_intercept[2, 2])}
 
-marea_cotton_plot <- ggplot(aes(y = marea, x = fertilizer_cont, color = shade), 
+marea_cotton_plot <- ggplot(aes(y = marea, x = n.ppm, color = factor(shade.cover)), 
                             data = subset(data, spp == 'Cotton')) +
   theme(legend.position = "right",
         plot.title = element_text(size = rel(2.2)),
@@ -663,7 +561,7 @@ marea_cotton_plot <- ggplot(aes(y = marea, x = fertilizer_cont, color = shade),
   labs(tag = "(a)") +
   ylim(c(10, 80))
 
-marea_soybean_plot <- ggplot(aes(y = marea, x = fertilizer_cont, color = shade), 
+marea_soybean_plot <- ggplot(aes(y = marea, x = n.ppm, color = factor(shade.cover)), 
                             data = subset(data, spp == 'Soybean')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -694,42 +592,42 @@ marea_soybean_plot <- ggplot(aes(y = marea, x = fertilizer_cont, color = shade),
 ## Create figure for Nmass
 ###############################################################################
 test(emtrends(nmass_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 0)))
+              var = "n.ppm", 
+              at = list(shade.cover = 0)))
 test(emtrends(nmass_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 30)))
+              var = "n.ppm", 
+              at = list(shade.cover = 30)))
 test(emtrends(nmass_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 50)))
+              var = "n.ppm", 
+              at = list(shade.cover = 50)))
 test(emtrends(nmass_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 80)))
+              var = "n.ppm", 
+              at = list(shade.cover = 80)))
 
 nmass_emtrend_0 <- summary(emtrends(nmass_lmer, ~spp, 
-                                    var = 'fertilizer_cont', 
-                                    at = list(shade_cont = 0)))
+                                    var = "n.ppm", 
+                                    at = list(shade.cover = 0)))
 nmass_emtrend_30 <- summary(emtrends(nmass_lmer, ~spp, 
-                                     var = 'fertilizer_cont', 
-                                     at = list(shade_cont = 30)))
+                                     var = "n.ppm", 
+                                     at = list(shade.cover = 30)))
 nmass_emtrend_50 <- summary(emtrends(nmass_lmer, ~spp, 
-                                     var = 'fertilizer_cont', 
-                                     at = list(shade_cont = 50)))
+                                     var = "n.ppm", 
+                                     at = list(shade.cover = 50)))
 nmass_emtrend_80 <- summary(emtrends(nmass_lmer, ~spp, 
-                                     var = 'fertilizer_cont', 
-                                     at = list(shade_cont = 80)))
+                                     var = "n.ppm", 
+                                     at = list(shade.cover = 80)))
 nmass_intercept_0 <- summary(emmeans(nmass_lmer, ~spp, 
-                                     at = list(fertilizer_cont = 0, 
-                                               shade_cont = 0)))
+                                     at = list(n.ppm = 0, 
+                                               shade.cover = 0)))
 nmass_intercept_30 <- summary(emmeans(nmass_lmer, ~spp, 
-                                      at = list(fertilizer_cont = 0, 
-                                                shade_cont = 30)))
+                                      at = list(n.ppm = 0, 
+                                                shade.cover = 30)))
 nmass_intercept_50 <- summary(emmeans(nmass_lmer, ~spp, 
-                                      at = list(fertilizer_cont = 0, 
-                                                shade_cont = 50)))
+                                      at = list(n.ppm = 0, 
+                                                shade.cover = 50)))
 nmass_intercept_80 <- summary(emmeans(nmass_lmer, ~spp, 
-                                      at = list(fertilizer_cont = 0, 
-                                                shade_cont = 80)))
+                                      at = list(n.ppm = 0, 
+                                                shade.cover = 80)))
 
 nmass_func_cotton_0 <- function(x){
   exp(nmass_emtrend_0[1, 2] * x + nmass_intercept_0[1, 2])}
@@ -749,7 +647,7 @@ nmass_func_soybean_50 <- function(x){
 nmass_func_soybean_80 <- function(x){
   exp(nmass_emtrend_80[2, 2] * x + nmass_intercept_80[2, 2])}
 
-nmass_cotton_plot <- ggplot(aes(y = nmass, x = fertilizer_cont, color = shade), 
+nmass_cotton_plot <- ggplot(aes(y = nmass, x = n.ppm, color = factor(shade.cover)), 
                             data = subset(data, spp == 'Cotton')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -774,7 +672,7 @@ nmass_cotton_plot <- ggplot(aes(y = nmass, x = fertilizer_cont, color = shade),
   labs(tag = "(c)")+
   ylim(c(0, 0.08))
 
-nmass_soybean_plot <- ggplot(aes(y = nmass, x = fertilizer_cont, color = shade), 
+nmass_soybean_plot <- ggplot(aes(y = nmass, x = n.ppm, color = factor(shade.cover)), 
                              data = subset(data, spp == 'Soybean')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -803,42 +701,42 @@ nmass_soybean_plot <- ggplot(aes(y = nmass, x = fertilizer_cont, color = shade),
 ## Create figure for Narea
 ###############################################################################
 test(emtrends(narea_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 0)))
+              var = "n.ppm", 
+              at = list(shade.cover = 0)))
 test(emtrends(narea_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 30)))
+              var = "n.ppm", 
+              at = list(shade.cover = 30)))
 test(emtrends(narea_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 50)))
+              var = "n.ppm", 
+              at = list(shade.cover = 50)))
 test(emtrends(narea_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 80)))
+              var = "n.ppm", 
+              at = list(shade.cover = 80)))
 
 narea_emtrend_0 <- summary(emtrends(narea_lmer, ~spp, 
-                                    var = 'fertilizer_cont', 
-                                    at = list(shade_cont = 0)))
+                                    var = "n.ppm", 
+                                    at = list(shade.cover = 0)))
 narea_emtrend_30 <- summary(emtrends(narea_lmer, ~spp, 
-                                     var = 'fertilizer_cont', 
-                                     at = list(shade_cont = 30)))
+                                     var = "n.ppm", 
+                                     at = list(shade.cover = 30)))
 narea_emtrend_50 <- summary(emtrends(narea_lmer, ~spp, 
-                                     var = 'fertilizer_cont', 
-                                     at = list(shade_cont = 50)))
+                                     var = "n.ppm", 
+                                     at = list(shade.cover = 50)))
 narea_emtrend_80 <- summary(emtrends(narea_lmer, ~spp, 
-                                     var = 'fertilizer_cont', 
-                                     at = list(shade_cont = 80)))
+                                     var = "n.ppm", 
+                                     at = list(shade.cover = 80)))
 narea_intercept_0 <- summary(emmeans(narea_lmer, ~spp, 
-                                     at = list(fertilizer_cont = 0, 
-                                               shade_cont = 0)))
+                                     at = list(n.ppm = 0, 
+                                               shade.cover = 0)))
 narea_intercept_30 <- summary(emmeans(narea_lmer, ~spp, 
-                                      at = list(fertilizer_cont = 0, 
-                                                shade_cont = 30)))
+                                      at = list(n.ppm = 0, 
+                                                shade.cover = 30)))
 narea_intercept_50 <- summary(emmeans(narea_lmer, ~spp, 
-                                      at = list(fertilizer_cont = 0, 
-                                                shade_cont = 50)))
+                                      at = list(n.ppm = 0, 
+                                                shade.cover = 50)))
 narea_intercept_80 <- summary(emmeans(narea_lmer, ~spp, 
-                                      at = list(fertilizer_cont = 0, 
-                                                shade_cont = 80)))
+                                      at = list(n.ppm = 0, 
+                                                shade.cover = 80)))
 
 narea_func_cotton_0 <- function(x){
   exp(narea_emtrend_0[1, 2] * x + narea_intercept_0[1, 2])}
@@ -858,7 +756,7 @@ narea_func_soybean_50 <- function(x){
 narea_func_soybean_80 <- function(x){
   exp(narea_emtrend_80[2, 2] * x + narea_intercept_80[2, 2])}
 
-narea_cotton_plot <- ggplot(aes(y = narea, x = fertilizer_cont, color = shade), 
+narea_cotton_plot <- ggplot(aes(y = narea, x = n.ppm, color = factor(shade.cover)), 
                             data = subset(data, spp == 'Cotton')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -883,7 +781,7 @@ narea_cotton_plot <- ggplot(aes(y = narea, x = fertilizer_cont, color = shade),
   labs(tag = "(e)")+
   ylim(c(0.5, 3))
 
-narea_soybean_plot <- ggplot(aes(y = narea, x = fertilizer_cont, color = shade), 
+narea_soybean_plot <- ggplot(aes(y = narea, x = n.ppm, color = factor(shade.cover)), 
                              data = subset(data, spp == 'Soybean')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -933,42 +831,42 @@ marea_nmass_narea_g <- cbind(marea_nmass_narea_cotton_g,
 ## Create figure for Vcmax25
 ###############################################################################
 test(emtrends(vcmax25_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 0)))
+              var = "n.ppm", 
+              at = list(shade.cover = 0)))
 test(emtrends(vcmax25_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 30)))
+              var = "n.ppm", 
+              at = list(shade.cover = 30)))
 test(emtrends(vcmax25_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 50)))
+              var = "n.ppm", 
+              at = list(shade.cover = 50)))
 test(emtrends(vcmax25_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 80)))
+              var = "n.ppm", 
+              at = list(shade.cover = 80)))
 
 vcmax25_emtrend_0 <- summary(emtrends(vcmax25_lmer, ~spp, 
-                                      var = 'fertilizer_cont', 
-                                      at = list(shade_cont = 0)))
+                                      var = "n.ppm", 
+                                      at = list(shade.cover = 0)))
 vcmax25_emtrend_30 <- summary(emtrends(vcmax25_lmer, ~spp, 
-                                       var = 'fertilizer_cont', 
-                                       at = list(shade_cont = 30)))
+                                       var = "n.ppm", 
+                                       at = list(shade.cover = 30)))
 vcmax25_emtrend_50 <- summary(emtrends(vcmax25_lmer, ~spp, 
-                                       var = 'fertilizer_cont', 
-                                       at = list(shade_cont = 50)))
+                                       var = "n.ppm", 
+                                       at = list(shade.cover = 50)))
 vcmax25_emtrend_80 <- summary(emtrends(vcmax25_lmer, ~spp, 
-                                       var = 'fertilizer_cont', 
-                                       at = list(shade_cont = 80)))
+                                       var = "n.ppm", 
+                                       at = list(shade.cover = 80)))
 vcmax25_intercept_0 <- summary(emmeans(vcmax25_lmer, ~spp, 
-                                       at = list(fertilizer_cont = 0, 
-                                                 shade_cont = 0)))
+                                       at = list(n.ppm = 0, 
+                                                 shade.cover = 0)))
 vcmax25_intercept_30 <- summary(emmeans(vcmax25_lmer, ~spp, 
-                                        at = list(fertilizer_cont = 0, 
-                                                  shade_cont = 30)))
+                                        at = list(n.ppm = 0, 
+                                                  shade.cover = 30)))
 vcmax25_intercept_50 <- summary(emmeans(vcmax25_lmer, ~spp, 
-                                        at = list(fertilizer_cont = 0, 
-                                                  shade_cont = 50)))
+                                        at = list(n.ppm = 0, 
+                                                  shade.cover = 50)))
 vcmax25_intercept_80 <- summary(emmeans(vcmax25_lmer, ~spp, 
-                                        at = list(fertilizer_cont = 0, 
-                                                  shade_cont = 80)))
+                                        at = list(n.ppm = 0, 
+                                                  shade.cover = 80)))
 
 vcmax25_func_cotton_0 <- function(x){
   exp(vcmax25_emtrend_0[1, 2] * x + vcmax25_intercept_0[1, 2])}
@@ -990,9 +888,9 @@ vcmax25_func_soybean_80 <- function(x){
 
 #### since there is no significant vcmax25 interction between shade and fertilizer, we plot a single line for each species
 vcmax25_emtrend <- summary(emtrends(vcmax25_lmer, ~spp, 
-                                    var = 'fertilizer_cont'))
+                                    var = "n.ppm"))
 vcmax25_intercept <- summary(emmeans(vcmax25_lmer, ~spp, 
-                                     at = list(fertilizer_cont = 0)))
+                                     at = list(n.ppm = 0)))
 
 vcmax25_func_cotton <- function(x){
   exp(vcmax25_emtrend[1, 2] * x + vcmax25_intercept[1, 2])}
@@ -1000,7 +898,7 @@ vcmax25_func_cotton <- function(x){
 vcmax25_func_soybean <- function(x){
   exp(vcmax25_emtrend[2, 2] * x + vcmax25_intercept[2, 2])}
 
-vcmax25_cotton_plot <- ggplot(aes(y = vcmax25, x = fertilizer_cont, color = shade), 
+vcmax25_cotton_plot <- ggplot(aes(y = vcmax25, x = n.ppm, color = factor(shade.cover)), 
                               data = subset(data, spp == 'Cotton')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1027,7 +925,7 @@ vcmax25_cotton_plot <- ggplot(aes(y = vcmax25, x = fertilizer_cont, color = shad
   labs(tag = "(a)") +
   ylim(c(10, 175))
 
-vcmax25_soybean_plot <- ggplot(aes(y = vcmax25, x = fertilizer_cont, color = shade), 
+vcmax25_soybean_plot <- ggplot(aes(y = vcmax25, x = n.ppm, color = factor(shade.cover)), 
                                data = subset(data, spp == 'Soybean')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1058,42 +956,42 @@ vcmax25_soybean_plot <- ggplot(aes(y = vcmax25, x = fertilizer_cont, color = sha
 ## Create figure for Jmax25
 ###############################################################################
 test(emtrends(jmax25_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 0)))
+              var = "n.ppm", 
+              at = list(shade.cover = 0)))
 test(emtrends(jmax25_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 30)))
+              var = "n.ppm", 
+              at = list(shade.cover = 30)))
 test(emtrends(jmax25_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 50)))
+              var = "n.ppm", 
+              at = list(shade.cover = 50)))
 test(emtrends(jmax25_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 80)))
+              var = "n.ppm", 
+              at = list(shade.cover = 80)))
 
 jmax25_emtrend_0 <- summary(emtrends(jmax25_lmer, ~spp, 
-                                     var = 'fertilizer_cont', 
-                                     at = list(shade_cont = 0)))
+                                     var = "n.ppm", 
+                                     at = list(shade.cover = 0)))
 jmax25_emtrend_30 <- summary(emtrends(jmax25_lmer, ~spp, 
-                                      var = 'fertilizer_cont', 
-                                      at = list(shade_cont = 30)))
+                                      var = "n.ppm", 
+                                      at = list(shade.cover = 30)))
 jmax25_emtrend_50 <- summary(emtrends(jmax25_lmer, ~spp, 
-                                      var = 'fertilizer_cont', 
-                                      at = list(shade_cont = 50)))
+                                      var = "n.ppm", 
+                                      at = list(shade.cover = 50)))
 jmax25_emtrend_80 <- summary(emtrends(jmax25_lmer, ~spp, 
-                                      var = 'fertilizer_cont', 
-                                      at = list(shade_cont = 80)))
+                                      var = "n.ppm", 
+                                      at = list(shade.cover = 80)))
 jmax25_intercept_0 <- summary(emmeans(jmax25_lmer, ~spp, 
-                                      at = list(fertilizer_cont = 0, 
-                                                shade_cont = 0)))
+                                      at = list(n.ppm = 0, 
+                                                shade.cover = 0)))
 jmax25_intercept_30 <- summary(emmeans(jmax25_lmer, ~spp, 
-                                       at = list(fertilizer_cont = 0, 
-                                                 shade_cont = 30)))
+                                       at = list(n.ppm = 0, 
+                                                 shade.cover = 30)))
 jmax25_intercept_50 <- summary(emmeans(jmax25_lmer, ~spp, 
-                                       at = list(fertilizer_cont = 0, 
-                                                 shade_cont = 50)))
+                                       at = list(n.ppm = 0, 
+                                                 shade.cover = 50)))
 jmax25_intercept_80 <- summary(emmeans(jmax25_lmer, ~spp, 
-                                       at = list(fertilizer_cont = 0, 
-                                                 shade_cont = 80)))
+                                       at = list(n.ppm = 0, 
+                                                 shade.cover = 80)))
 
 jmax25_func_cotton_0 <- function(x){
   exp(jmax25_emtrend_0[1, 2] * x + jmax25_intercept_0[1, 2])}
@@ -1115,9 +1013,9 @@ jmax25_func_soybean_80 <- function(x){
 
 #### since there is no significant jmax25 interction between shade and fertilizer, we plot a single line for each species
 jmax25_emtrend <- summary(emtrends(jmax25_lmer, ~spp, 
-                                   var = 'fertilizer_cont'))
+                                   var = "n.ppm"))
 jmax25_intercept <- summary(emmeans(jmax25_lmer, ~spp, 
-                                    at = list(fertilizer_cont = 0)))
+                                    at = list(n.ppm = 0)))
 
 jmax25_func_cotton <- function(x){
   exp(jmax25_emtrend[1, 2] * x + jmax25_intercept[1, 2])}
@@ -1125,7 +1023,7 @@ jmax25_func_cotton <- function(x){
 jmax25_func_soybean <- function(x){
   exp(jmax25_emtrend[2, 2] * x + jmax25_intercept[2, 2])}
 
-jmax25_cotton_plot <- ggplot(aes(y = jmax25, x = fertilizer_cont, color = shade), 
+jmax25_cotton_plot <- ggplot(aes(y = jmax25, x = n.ppm, color = factor(shade.cover)), 
                              data = subset(data, spp == 'Cotton')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1151,7 +1049,7 @@ jmax25_cotton_plot <- ggplot(aes(y = jmax25, x = fertilizer_cont, color = shade)
   labs(tag = "(c)") +
   ylim(c(30, 210))
 
-jmax25_soybean_plot <- ggplot(aes(y = jmax25, x = fertilizer_cont, color = shade), 
+jmax25_soybean_plot <- ggplot(aes(y = jmax25, x = n.ppm, color = factor(shade.cover)), 
                               data = subset(data, spp == 'Soybean')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1181,42 +1079,42 @@ jmax25_soybean_plot <- ggplot(aes(y = jmax25, x = fertilizer_cont, color = shade
 ## Create figure for Chlorophyll per leaf area
 ###############################################################################
 test(emtrends(chlorophyll_mmol.m2_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 0)))
+              var = "n.ppm", 
+              at = list(shade.cover = 0)))
 test(emtrends(chlorophyll_mmol.m2_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 30)))
+              var = "n.ppm", 
+              at = list(shade.cover = 30)))
 test(emtrends(chlorophyll_mmol.m2_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 50)))
+              var = "n.ppm", 
+              at = list(shade.cover = 50)))
 test(emtrends(chlorophyll_mmol.m2_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 80)))
+              var = "n.ppm", 
+              at = list(shade.cover = 80)))
 
 chlorophyll_mmol.m2_emtrend_0 <- summary(emtrends(chlorophyll_mmol.m2_lmer, ~spp, 
-                                                  var = 'fertilizer_cont', 
-                                                  at = list(shade_cont = 0)))
+                                                  var = "n.ppm", 
+                                                  at = list(shade.cover = 0)))
 chlorophyll_mmol.m2_emtrend_30 <- summary(emtrends(chlorophyll_mmol.m2_lmer, ~spp, 
-                                                   var = 'fertilizer_cont', 
-                                                   at = list(shade_cont = 30)))
+                                                   var = "n.ppm", 
+                                                   at = list(shade.cover = 30)))
 chlorophyll_mmol.m2_emtrend_50 <- summary(emtrends(chlorophyll_mmol.m2_lmer, ~spp, 
-                                                   var = 'fertilizer_cont', 
-                                                   at = list(shade_cont = 50)))
+                                                   var = "n.ppm", 
+                                                   at = list(shade.cover = 50)))
 chlorophyll_mmol.m2_emtrend_80 <- summary(emtrends(chlorophyll_mmol.m2_lmer, ~spp, 
-                                                   var = 'fertilizer_cont', 
-                                                   at = list(shade_cont = 80)))
+                                                   var = "n.ppm", 
+                                                   at = list(shade.cover = 80)))
 chlorophyll_mmol.m2_intercept_0 <- summary(emmeans(chlorophyll_mmol.m2_lmer, ~spp, 
-                                                   at = list(fertilizer_cont = 0, 
-                                                             shade_cont = 0)))
+                                                   at = list(n.ppm = 0, 
+                                                             shade.cover = 0)))
 chlorophyll_mmol.m2_intercept_30 <- summary(emmeans(chlorophyll_mmol.m2_lmer, ~spp, 
-                                                    at = list(fertilizer_cont = 0, 
-                                                              shade_cont = 30)))
+                                                    at = list(n.ppm = 0, 
+                                                              shade.cover = 30)))
 chlorophyll_mmol.m2_intercept_50 <- summary(emmeans(chlorophyll_mmol.m2_lmer, ~spp, 
-                                                    at = list(fertilizer_cont = 0, 
-                                                              shade_cont = 50)))
+                                                    at = list(n.ppm = 0, 
+                                                              shade.cover = 50)))
 chlorophyll_mmol.m2_intercept_80 <- summary(emmeans(chlorophyll_mmol.m2_lmer, ~spp, 
-                                                    at = list(fertilizer_cont = 0, 
-                                                              shade_cont = 80)))
+                                                    at = list(n.ppm = 0, 
+                                                              shade.cover = 80)))
 
 chlorophyll_mmol.m2_func_cotton_0 <- function(x){
   exp(chlorophyll_mmol.m2_emtrend_0[1, 2] * x + chlorophyll_mmol.m2_intercept_0[1, 2])}
@@ -1238,9 +1136,9 @@ chlorophyll_mmol.m2_func_soybean_80 <- function(x){
 
 #### since there is no significant chlorophyll_mmol.m2 interction between shade and fertilizer, we plot a single line for each species
 chlorophyll_mmol.m2_emtrend <- summary(emtrends(chlorophyll_mmol.m2_lmer, ~spp, 
-                                                var = 'fertilizer_cont'))
+                                                var = "n.ppm"))
 chlorophyll_mmol.m2_intercept <- summary(emmeans(chlorophyll_mmol.m2_lmer, ~spp, 
-                                                 at = list(fertilizer_cont = 0)))
+                                                 at = list(n.ppm = 0)))
 
 chlorophyll_mmol.m2_func_cotton <- function(x){
   exp(chlorophyll_mmol.m2_emtrend[1, 2] * x + chlorophyll_mmol.m2_intercept[1, 2])}
@@ -1248,7 +1146,7 @@ chlorophyll_mmol.m2_func_cotton <- function(x){
 chlorophyll_mmol.m2_func_soybean <- function(x){
   exp(chlorophyll_mmol.m2_emtrend[2, 2] * x + chlorophyll_mmol.m2_intercept[2, 2])}
 
-chlorophyll_mmol.m2_cotton_plot <- ggplot(aes(y = chlorophyll_mmol.m2, x = fertilizer_cont, color = shade), 
+chlorophyll_mmol.m2_cotton_plot <- ggplot(aes(y = chlorophyll_mmol.m2, x = n.ppm, color = factor(shade.cover)), 
                                           data = subset(data, spp == 'Cotton')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1274,7 +1172,7 @@ chlorophyll_mmol.m2_cotton_plot <- ggplot(aes(y = chlorophyll_mmol.m2, x = ferti
   labs(tag = "(e)") +
   ylim(c(0, 0.4))
 
-chlorophyll_mmol.m2_soybean_plot <- ggplot(aes(y = chlorophyll_mmol.m2, x = fertilizer_cont, color = shade), 
+chlorophyll_mmol.m2_soybean_plot <- ggplot(aes(y = chlorophyll_mmol.m2, x = n.ppm, color = factor(shade.cover)), 
                                            data = subset(data, spp == 'Soybean')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1325,42 +1223,42 @@ vcmax25_jmax25_chlorophyll_mmol.m2_g <- cbind(vcmax25_jmax25_chlorophyll_mmol.m2
 ## Create figure for proportion of leaf N to Rubisco
 ###############################################################################
 test(emtrends(propN_rubisco_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 0)))
+              var = "n.ppm", 
+              at = list(shade.cover = 0)))
 test(emtrends(propN_rubisco_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 30)))
+              var = "n.ppm", 
+              at = list(shade.cover = 30)))
 test(emtrends(propN_rubisco_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 50)))
+              var = "n.ppm", 
+              at = list(shade.cover = 50)))
 test(emtrends(propN_rubisco_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 80)))
+              var = "n.ppm", 
+              at = list(shade.cover = 80)))
 
 propN_rubisco_emtrend_0 <- summary(emtrends(propN_rubisco_lmer, ~spp, 
-                                            var = 'fertilizer_cont', 
-                                            at = list(shade_cont = 0)))
+                                            var = "n.ppm", 
+                                            at = list(shade.cover = 0)))
 propN_rubisco_emtrend_30 <- summary(emtrends(propN_rubisco_lmer, ~spp, 
-                                             var = 'fertilizer_cont', 
-                                             at = list(shade_cont = 30)))
+                                             var = "n.ppm", 
+                                             at = list(shade.cover = 30)))
 propN_rubisco_emtrend_50 <- summary(emtrends(propN_rubisco_lmer, ~spp, 
-                                             var = 'fertilizer_cont', 
-                                             at = list(shade_cont = 50)))
+                                             var = "n.ppm", 
+                                             at = list(shade.cover = 50)))
 propN_rubisco_emtrend_80 <- summary(emtrends(propN_rubisco_lmer, ~spp, 
-                                             var = 'fertilizer_cont', 
-                                             at = list(shade_cont = 80)))
+                                             var = "n.ppm", 
+                                             at = list(shade.cover = 80)))
 propN_rubisco_intercept_0 <- summary(emmeans(propN_rubisco_lmer, ~spp, 
-                                             at = list(fertilizer_cont = 0, 
-                                                       shade_cont = 0)))
+                                             at = list(n.ppm = 0, 
+                                                       shade.cover = 0)))
 propN_rubisco_intercept_30 <- summary(emmeans(propN_rubisco_lmer, ~spp, 
-                                              at = list(fertilizer_cont = 0, 
-                                                        shade_cont = 30)))
+                                              at = list(n.ppm = 0, 
+                                                        shade.cover = 30)))
 propN_rubisco_intercept_50 <- summary(emmeans(propN_rubisco_lmer, ~spp, 
-                                              at = list(fertilizer_cont = 0, 
-                                                        shade_cont = 50)))
+                                              at = list(n.ppm = 0, 
+                                                        shade.cover = 50)))
 propN_rubisco_intercept_80 <- summary(emmeans(propN_rubisco_lmer, ~spp, 
-                                              at = list(fertilizer_cont = 0, 
-                                                        shade_cont = 80)))
+                                              at = list(n.ppm = 0, 
+                                                        shade.cover = 80)))
 
 propN_rubisco_func_cotton_0 <- function(x){
   (propN_rubisco_emtrend_0[1, 2] * x + propN_rubisco_intercept_0[1, 2])}
@@ -1382,9 +1280,9 @@ propN_rubisco_func_soybean_80 <- function(x){
 
 #### since there is no significant propN_rubisco interction between shade and fertilizer, we plot a single line for each species
 propN_rubisco_emtrend <- summary(emtrends(propN_rubisco_lmer, ~spp, 
-                                          var = 'fertilizer_cont'))
+                                          var = "n.ppm"))
 propN_rubisco_intercept <- summary(emmeans(propN_rubisco_lmer, ~spp, 
-                                           at = list(fertilizer_cont = 0)))
+                                           at = list(n.ppm = 0)))
 
 propN_rubisco_func_cotton <- function(x){
   (propN_rubisco_emtrend[1, 2] * x + propN_rubisco_intercept[1, 2])}
@@ -1392,7 +1290,7 @@ propN_rubisco_func_cotton <- function(x){
 propN_rubisco_func_soybean <- function(x){
   (propN_rubisco_emtrend[2, 2] * x + propN_rubisco_intercept[2, 2])}
 
-propN_rubisco_cotton_plot <- ggplot(aes(y = propN_rubisco, x = fertilizer_cont, color = shade), 
+propN_rubisco_cotton_plot <- ggplot(aes(y = propN_rubisco, x = n.ppm, color = factor(shade.cover)), 
                                     data = subset(data, spp == 'Cotton')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1419,7 +1317,7 @@ propN_rubisco_cotton_plot <- ggplot(aes(y = propN_rubisco, x = fertilizer_cont, 
   labs(tag = "(a)") +
   ylim(c(0, 0.9))
 
-propN_rubisco_soybean_plot <- ggplot(aes(y = propN_rubisco, x = fertilizer_cont, color = shade), 
+propN_rubisco_soybean_plot <- ggplot(aes(y = propN_rubisco, x = n.ppm, color = factor(shade.cover)), 
                                      data = subset(data, spp == 'Soybean')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1450,42 +1348,42 @@ propN_rubisco_soybean_plot <- ggplot(aes(y = propN_rubisco, x = fertilizer_cont,
 ## Create figure for proportion of leaf N to bioenergetics
 ###############################################################################
 test(emtrends(propN_bioenergetics_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 0)))
+              var = "n.ppm", 
+              at = list(shade.cover = 0)))
 test(emtrends(propN_bioenergetics_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 30)))
+              var = "n.ppm", 
+              at = list(shade.cover = 30)))
 test(emtrends(propN_bioenergetics_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 50)))
+              var = "n.ppm", 
+              at = list(shade.cover = 50)))
 test(emtrends(propN_bioenergetics_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 80)))
+              var = "n.ppm", 
+              at = list(shade.cover = 80)))
 
 propN_bioenergetics_emtrend_0 <- summary(emtrends(propN_bioenergetics_lmer, ~spp, 
-                                                  var = 'fertilizer_cont', 
-                                                  at = list(shade_cont = 0)))
+                                                  var = "n.ppm", 
+                                                  at = list(shade.cover = 0)))
 propN_bioenergetics_emtrend_30 <- summary(emtrends(propN_bioenergetics_lmer, ~spp, 
-                                                   var = 'fertilizer_cont', 
-                                                   at = list(shade_cont = 30)))
+                                                   var = "n.ppm", 
+                                                   at = list(shade.cover = 30)))
 propN_bioenergetics_emtrend_50 <- summary(emtrends(propN_bioenergetics_lmer, ~spp, 
-                                                   var = 'fertilizer_cont', 
-                                                   at = list(shade_cont = 50)))
+                                                   var = "n.ppm", 
+                                                   at = list(shade.cover = 50)))
 propN_bioenergetics_emtrend_80 <- summary(emtrends(propN_bioenergetics_lmer, ~spp, 
-                                                   var = 'fertilizer_cont', 
-                                                   at = list(shade_cont = 80)))
+                                                   var = "n.ppm", 
+                                                   at = list(shade.cover = 80)))
 propN_bioenergetics_intercept_0 <- summary(emmeans(propN_bioenergetics_lmer, ~spp, 
-                                                   at = list(fertilizer_cont = 0, 
-                                                             shade_cont = 0)))
+                                                   at = list(n.ppm = 0, 
+                                                             shade.cover = 0)))
 propN_bioenergetics_intercept_30 <- summary(emmeans(propN_bioenergetics_lmer, ~spp, 
-                                                    at = list(fertilizer_cont = 0, 
-                                                              shade_cont = 30)))
+                                                    at = list(n.ppm = 0, 
+                                                              shade.cover = 30)))
 propN_bioenergetics_intercept_50 <- summary(emmeans(propN_bioenergetics_lmer, ~spp, 
-                                                    at = list(fertilizer_cont = 0, 
-                                                              shade_cont = 50)))
+                                                    at = list(n.ppm = 0, 
+                                                              shade.cover = 50)))
 propN_bioenergetics_intercept_80 <- summary(emmeans(propN_bioenergetics_lmer, ~spp, 
-                                                    at = list(fertilizer_cont = 0, 
-                                                              shade_cont = 80)))
+                                                    at = list(n.ppm = 0, 
+                                                              shade.cover = 80)))
 
 propN_bioenergetics_func_cotton_0 <- function(x){
   (propN_bioenergetics_emtrend_0[1, 2] * x + propN_bioenergetics_intercept_0[1, 2])}
@@ -1507,9 +1405,9 @@ propN_bioenergetics_func_soybean_80 <- function(x){
 
 #### since there is no significant propN_bioenergetics interction between shade and fertilizer, we plot a single line for each species
 propN_bioenergetics_emtrend <- summary(emtrends(propN_bioenergetics_lmer, ~spp, 
-                                                var = 'fertilizer_cont'))
+                                                var = "n.ppm"))
 propN_bioenergetics_intercept <- summary(emmeans(propN_bioenergetics_lmer, ~spp, 
-                                                 at = list(fertilizer_cont = 0)))
+                                                 at = list(n.ppm = 0)))
 
 propN_bioenergetics_func_cotton <- function(x){
   (propN_bioenergetics_emtrend[1, 2] * x + propN_bioenergetics_intercept[1, 2])}
@@ -1517,7 +1415,7 @@ propN_bioenergetics_func_cotton <- function(x){
 propN_bioenergetics_func_soybean <- function(x){
   (propN_bioenergetics_emtrend[2, 2] * x + propN_bioenergetics_intercept[2, 2])}
 
-propN_bioenergetics_cotton_plot <- ggplot(aes(y = propN_bioenergetics, x = fertilizer_cont, color = shade), 
+propN_bioenergetics_cotton_plot <- ggplot(aes(y = propN_bioenergetics, x = n.ppm, color = factor(shade.cover)), 
                                           data = subset(data, spp == 'Cotton')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1543,7 +1441,7 @@ propN_bioenergetics_cotton_plot <- ggplot(aes(y = propN_bioenergetics, x = ferti
   labs(tag = "(c)") +
   ylim(c(0.02, 0.13))
 
-propN_bioenergetics_soybean_plot <- ggplot(aes(y = propN_bioenergetics, x = fertilizer_cont, color = shade), 
+propN_bioenergetics_soybean_plot <- ggplot(aes(y = propN_bioenergetics, x = n.ppm, color = factor(shade.cover)), 
                                            data = subset(data, spp == 'Soybean')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1573,42 +1471,42 @@ propN_bioenergetics_soybean_plot <- ggplot(aes(y = propN_bioenergetics, x = fert
 ## Create figure for proportion of leaf N to light harvesting
 ###############################################################################
 test(emtrends(propN_lightharvesting_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 0)))
+              var = "n.ppm", 
+              at = list(shade.cover = 0)))
 test(emtrends(propN_lightharvesting_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 30)))
+              var = "n.ppm", 
+              at = list(shade.cover = 30)))
 test(emtrends(propN_lightharvesting_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 50)))
+              var = "n.ppm", 
+              at = list(shade.cover = 50)))
 test(emtrends(propN_lightharvesting_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 80)))
+              var = "n.ppm", 
+              at = list(shade.cover = 80)))
 
 propN_lightharvesting_emtrend_0 <- summary(emtrends(propN_lightharvesting_lmer, ~spp, 
-                                                    var = 'fertilizer_cont', 
-                                                    at = list(shade_cont = 0)))
+                                                    var = "n.ppm", 
+                                                    at = list(shade.cover = 0)))
 propN_lightharvesting_emtrend_30 <- summary(emtrends(propN_lightharvesting_lmer, ~spp, 
-                                                     var = 'fertilizer_cont', 
-                                                     at = list(shade_cont = 30)))
+                                                     var = "n.ppm", 
+                                                     at = list(shade.cover = 30)))
 propN_lightharvesting_emtrend_50 <- summary(emtrends(propN_lightharvesting_lmer, ~spp, 
-                                                     var = 'fertilizer_cont', 
-                                                     at = list(shade_cont = 50)))
+                                                     var = "n.ppm", 
+                                                     at = list(shade.cover = 50)))
 propN_lightharvesting_emtrend_80 <- summary(emtrends(propN_lightharvesting_lmer, ~spp, 
-                                                     var = 'fertilizer_cont', 
-                                                     at = list(shade_cont = 80)))
+                                                     var = "n.ppm", 
+                                                     at = list(shade.cover = 80)))
 propN_lightharvesting_intercept_0 <- summary(emmeans(propN_lightharvesting_lmer, ~spp, 
-                                                     at = list(fertilizer_cont = 0, 
-                                                               shade_cont = 0)))
+                                                     at = list(n.ppm = 0, 
+                                                               shade.cover = 0)))
 propN_lightharvesting_intercept_30 <- summary(emmeans(propN_lightharvesting_lmer, ~spp, 
-                                                      at = list(fertilizer_cont = 0, 
-                                                                shade_cont = 30)))
+                                                      at = list(n.ppm = 0, 
+                                                                shade.cover = 30)))
 propN_lightharvesting_intercept_50 <- summary(emmeans(propN_lightharvesting_lmer, ~spp, 
-                                                      at = list(fertilizer_cont = 0, 
-                                                                shade_cont = 50)))
+                                                      at = list(n.ppm = 0, 
+                                                                shade.cover = 50)))
 propN_lightharvesting_intercept_80 <- summary(emmeans(propN_lightharvesting_lmer, ~spp, 
-                                                      at = list(fertilizer_cont = 0, 
-                                                                shade_cont = 80)))
+                                                      at = list(n.ppm = 0, 
+                                                                shade.cover = 80)))
 
 propN_lightharvesting_func_cotton_0 <- function(x){
   (propN_lightharvesting_emtrend_0[1, 2] * x + propN_lightharvesting_intercept_0[1, 2])}
@@ -1630,9 +1528,9 @@ propN_lightharvesting_func_soybean_80 <- function(x){
 
 #### since there is no significant propN_lightharvesting interction between shade and fertilizer, we plot a single line for each species
 propN_lightharvesting_emtrend <- summary(emtrends(propN_lightharvesting_lmer, ~spp, 
-                                                  var = 'fertilizer_cont'))
+                                                  var = "n.ppm"))
 propN_lightharvesting_intercept <- summary(emmeans(propN_lightharvesting_lmer, ~spp, 
-                                                   at = list(fertilizer_cont = 0)))
+                                                   at = list(n.ppm = 0)))
 
 propN_lightharvesting_func_cotton <- function(x){
   (propN_lightharvesting_emtrend[1, 2] * x + propN_lightharvesting_intercept[1, 2])}
@@ -1640,7 +1538,7 @@ propN_lightharvesting_func_cotton <- function(x){
 propN_lightharvesting_func_soybean <- function(x){
   (propN_lightharvesting_emtrend[2, 2] * x + propN_lightharvesting_intercept[2, 2])}
 
-propN_lightharvesting_cotton_plot <- ggplot(aes(y = propN_lightharvesting, x = fertilizer_cont, color = shade), 
+propN_lightharvesting_cotton_plot <- ggplot(aes(y = propN_lightharvesting, x = n.ppm, color = factor(shade.cover)), 
                                             data = subset(data, spp == 'Cotton')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1666,7 +1564,7 @@ propN_lightharvesting_cotton_plot <- ggplot(aes(y = propN_lightharvesting, x = f
   labs(tag = "(e)") +
   ylim(c(0, 0.1))
 
-propN_lightharvesting_soybean_plot <- ggplot(aes(y = propN_lightharvesting, x = fertilizer_cont, color = shade), 
+propN_lightharvesting_soybean_plot <- ggplot(aes(y = propN_lightharvesting, x = n.ppm, color = factor(shade.cover)), 
                                              data = subset(data, spp == 'Soybean')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1718,42 +1616,42 @@ propN_rubisco_propN_bioenergetics_propN_lightharvesting_g <- cbind(propN_rubisco
 ## Create figure for total leaf area
 ###############################################################################
 test(emtrends(tla_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 0)))
+              var = "n.ppm", 
+              at = list(shade.cover = 0)))
 test(emtrends(tla_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 30)))
+              var = "n.ppm", 
+              at = list(shade.cover = 30)))
 test(emtrends(tla_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 50)))
+              var = "n.ppm", 
+              at = list(shade.cover = 50)))
 test(emtrends(tla_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 80)))
+              var = "n.ppm", 
+              at = list(shade.cover = 80)))
 
 tla_emtrend_0 <- summary(emtrends(tla_lmer, ~spp, 
-                                  var = 'fertilizer_cont', 
-                                  at = list(shade_cont = 0)))
+                                  var = "n.ppm", 
+                                  at = list(shade.cover = 0)))
 tla_emtrend_30 <- summary(emtrends(tla_lmer, ~spp, 
-                                   var = 'fertilizer_cont', 
-                                   at = list(shade_cont = 30)))
+                                   var = "n.ppm", 
+                                   at = list(shade.cover = 30)))
 tla_emtrend_50 <- summary(emtrends(tla_lmer, ~spp, 
-                                   var = 'fertilizer_cont', 
-                                   at = list(shade_cont = 50)))
+                                   var = "n.ppm", 
+                                   at = list(shade.cover = 50)))
 tla_emtrend_80 <- summary(emtrends(tla_lmer, ~spp, 
-                                   var = 'fertilizer_cont', 
-                                   at = list(shade_cont = 80)))
+                                   var = "n.ppm", 
+                                   at = list(shade.cover = 80)))
 tla_intercept_0 <- summary(emmeans(tla_lmer, ~spp, 
-                                   at = list(fertilizer_cont = 0, 
-                                             shade_cont = 0)))
+                                   at = list(n.ppm = 0, 
+                                             shade.cover = 0)))
 tla_intercept_30 <- summary(emmeans(tla_lmer, ~spp, 
-                                    at = list(fertilizer_cont = 0, 
-                                              shade_cont = 30)))
+                                    at = list(n.ppm = 0, 
+                                              shade.cover = 30)))
 tla_intercept_50 <- summary(emmeans(tla_lmer, ~spp, 
-                                    at = list(fertilizer_cont = 0, 
-                                              shade_cont = 50)))
+                                    at = list(n.ppm = 0, 
+                                              shade.cover = 50)))
 tla_intercept_80 <- summary(emmeans(tla_lmer, ~spp, 
-                                    at = list(fertilizer_cont = 0, 
-                                              shade_cont = 80)))
+                                    at = list(n.ppm = 0, 
+                                              shade.cover = 80)))
 
 tla_func_cotton_0 <- function(x){
   exp(tla_emtrend_0[1, 2] * x + tla_intercept_0[1, 2])}
@@ -1773,7 +1671,7 @@ tla_func_soybean_50 <- function(x){
 tla_func_soybean_80 <- function(x){
   exp(tla_emtrend_80[2, 2] * x + tla_intercept_80[2, 2])}
 
-tla_cotton_plot <- ggplot(aes(y = tla, x = fertilizer_cont, color = shade), 
+tla_cotton_plot <- ggplot(aes(y = tla, x = n.ppm, color = factor(shade.cover)), 
                           data = subset(data, spp == 'Cotton')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1799,7 +1697,7 @@ tla_cotton_plot <- ggplot(aes(y = tla, x = fertilizer_cont, color = shade),
   labs(tag = "(a)") +
   ylim(c(0, 800))
 
-tla_soybean_plot <- ggplot(aes(y = tla, x = fertilizer_cont, color = shade), 
+tla_soybean_plot <- ggplot(aes(y = tla, x = n.ppm, color = factor(shade.cover)), 
                            data = subset(data, spp == 'Soybean')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1829,42 +1727,42 @@ tla_soybean_plot <- ggplot(aes(y = tla, x = fertilizer_cont, color = shade),
 ## Create figure for total biomass
 ###############################################################################
 test(emtrends(biomass_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 0)))
+              var = "n.ppm", 
+              at = list(shade.cover = 0)))
 test(emtrends(biomass_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 30)))
+              var = "n.ppm", 
+              at = list(shade.cover = 30)))
 test(emtrends(biomass_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 50)))
+              var = "n.ppm", 
+              at = list(shade.cover = 50)))
 test(emtrends(biomass_lmer, ~spp, 
-              var = 'fertilizer_cont', 
-              at = list(shade_cont = 80)))
+              var = "n.ppm", 
+              at = list(shade.cover = 80)))
 
 biomass_emtrend_0 <- summary(emtrends(biomass_lmer, ~spp, 
-                                      var = 'fertilizer_cont', 
-                                      at = list(shade_cont = 0)))
+                                      var = "n.ppm", 
+                                      at = list(shade.cover = 0)))
 biomass_emtrend_30 <- summary(emtrends(biomass_lmer, ~spp, 
-                                       var = 'fertilizer_cont', 
-                                       at = list(shade_cont = 30)))
+                                       var = "n.ppm", 
+                                       at = list(shade.cover = 30)))
 biomass_emtrend_50 <- summary(emtrends(biomass_lmer, ~spp, 
-                                       var = 'fertilizer_cont', 
-                                       at = list(shade_cont = 50)))
+                                       var = "n.ppm", 
+                                       at = list(shade.cover = 50)))
 biomass_emtrend_80 <- summary(emtrends(biomass_lmer, ~spp, 
-                                       var = 'fertilizer_cont', 
-                                       at = list(shade_cont = 80)))
+                                       var = "n.ppm", 
+                                       at = list(shade.cover = 80)))
 biomass_intercept_0 <- summary(emmeans(biomass_lmer, ~spp, 
-                                       at = list(fertilizer_cont = 0, 
-                                                 shade_cont = 0)))
+                                       at = list(n.ppm = 0, 
+                                                 shade.cover = 0)))
 biomass_intercept_30 <- summary(emmeans(biomass_lmer, ~spp, 
-                                        at = list(fertilizer_cont = 0, 
-                                                  shade_cont = 30)))
+                                        at = list(n.ppm = 0, 
+                                                  shade.cover = 30)))
 biomass_intercept_50 <- summary(emmeans(biomass_lmer, ~spp, 
-                                        at = list(fertilizer_cont = 0, 
-                                                  shade_cont = 50)))
+                                        at = list(n.ppm = 0, 
+                                                  shade.cover = 50)))
 biomass_intercept_80 <- summary(emmeans(biomass_lmer, ~spp, 
-                                        at = list(fertilizer_cont = 0, 
-                                                  shade_cont = 80)))
+                                        at = list(n.ppm = 0, 
+                                                  shade.cover = 80)))
 
 biomass_func_cotton_0 <- function(x){
   exp(biomass_emtrend_0[1, 2] * x + biomass_intercept_0[1, 2])}
@@ -1884,7 +1782,7 @@ biomass_func_soybean_50 <- function(x){
 biomass_func_soybean_80 <- function(x){
   exp(biomass_emtrend_80[2, 2] * x + biomass_intercept_80[2, 2])}
 
-biomass_cotton_plot <- ggplot(aes(y = biomass, x = fertilizer_cont, color = shade), 
+biomass_cotton_plot <- ggplot(aes(y = biomass, x = n.ppm, color = factor(shade.cover)), 
                               data = subset(data, spp == 'Cotton')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1909,7 +1807,7 @@ biomass_cotton_plot <- ggplot(aes(y = biomass, x = fertilizer_cont, color = shad
   labs(tag = "(c)") +
   ylim(c(0, 6))
 
-biomass_soybean_plot <- ggplot(aes(y = biomass, x = fertilizer_cont, color = shade), 
+biomass_soybean_plot <- ggplot(aes(y = biomass, x = n.ppm, color = factor(shade.cover)), 
                                data = subset(data, spp == 'Soybean')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
@@ -1952,34 +1850,34 @@ tla_biomass_g <- cbind(tla_biomass_cotton_g,
 ## Ancillary useful calculations (% change between low and high fertilization)
 ###############################################################################
 ## % change in total photosynthetic N
-propN_all_0ppm <- summary(emmeans(propN_rubisco_lmer, ~1, at = list(fertilizer_cont = 0)))[1, 2] +
-  summary(emmeans(propN_bioenergetics_lmer, ~1, at = list(fertilizer_cont = 0)))[1, 2] +
-  summary(emmeans(propN_lightharvesting_lmer, ~1, at = list(fertilizer_cont = 0)))[1, 2]
+propN_all_0ppm <- summary(emmeans(propN_rubisco_lmer, ~1, at = list(n.ppm = 0)))[1, 2] +
+  summary(emmeans(propN_bioenergetics_lmer, ~1, at = list(n.ppm = 0)))[1, 2] +
+  summary(emmeans(propN_lightharvesting_lmer, ~1, at = list(n.ppm = 0)))[1, 2]
 
-propN_all_630ppm <- summary(emmeans(propN_rubisco_lmer, ~1, at = list(fertilizer_cont = 630)))[1, 2] +
-  summary(emmeans(propN_bioenergetics_lmer, ~1, at = list(fertilizer_cont = 630)))[1, 2] +
-  summary(emmeans(propN_lightharvesting_lmer, ~1, at = list(fertilizer_cont = 630)))[1, 2]
+propN_all_630ppm <- summary(emmeans(propN_rubisco_lmer, ~1, at = list(n.ppm = 630)))[1, 2] +
+  summary(emmeans(propN_bioenergetics_lmer, ~1, at = list(n.ppm = 630)))[1, 2] +
+  summary(emmeans(propN_lightharvesting_lmer, ~1, at = list(n.ppm = 630)))[1, 2]
 
 propN_all_630ppm - propN_all_0ppm
 (propN_all_630ppm - propN_all_0ppm)/propN_all_0ppm
 
 ## % change in Vcmax25 between high and low shade cover
-vcmax25_shade0 <- summary(emmeans(vcmax25_lmer, ~1, at = list(shade_cont = 0)))[1, 2]
-vcmax25_shade80 <- summary(emmeans(vcmax25_lmer, ~1, at = list(shade_cont = 80)))[1, 2]
+vcmax25_shade0 <- summary(emmeans(vcmax25_lmer, ~1, at = list(shade.cover = 0)))[1, 2]
+vcmax25_shade80 <- summary(emmeans(vcmax25_lmer, ~1, at = list(shade.cover = 80)))[1, 2]
 (vcmax25_shade0 - vcmax25_shade80)/ vcmax25_shade80
 (exp(vcmax25_shade0) - exp(vcmax25_shade80)) / 800
 
 ## % change in Jmax25 between high and low shade cover
-jmax25_shade0 <- summary(emmeans(jmax25_lmer, ~1, at = list(shade_cont = 0)))[1, 2]
-jmax25_shade80 <- summary(emmeans(jmax25_lmer, ~1, at = list(shade_cont = 80)))[1, 2]
+jmax25_shade0 <- summary(emmeans(jmax25_lmer, ~1, at = list(shade.cover = 0)))[1, 2]
+jmax25_shade80 <- summary(emmeans(jmax25_lmer, ~1, at = list(shade.cover = 80)))[1, 2]
 (jmax25_shade0 - jmax25_shade80)/ jmax25_shade80
 
 ## % change in Vcmax25 between high and low N fertilization
-vcmax25_fertilizer0 <- summary(emmeans(vcmax25_lmer, ~spp, at = list(fertilizer_cont = 0)))[1, 2]
-vcmax25_fertilizer630 <- summary(emmeans(vcmax25_lmer, ~spp, at = list(fertilizer_cont = 630)))[1, 2]
+vcmax25_fertilizer0 <- summary(emmeans(vcmax25_lmer, ~spp, at = list(n.ppm = 0)))[1, 2]
+vcmax25_fertilizer630 <- summary(emmeans(vcmax25_lmer, ~spp, at = list(n.ppm = 630)))[1, 2]
 (vcmax25_fertilizer630 - vcmax25_fertilizer0)/ vcmax25_fertilizer0
 
 ## % change in Jmax25 between high and low N fertilization
-jmax25_fertilizer0 <- summary(emmeans(jmax25_lmer, ~spp, at = list(fertilizer_cont = 0)))[1, 2]
-jmax25_fertilizer630 <- summary(emmeans(jmax25_lmer, ~spp, at = list(fertilizer_cont = 630)))[1, 2]
+jmax25_fertilizer0 <- summary(emmeans(jmax25_lmer, ~spp, at = list(n.ppm = 0)))[1, 2]
+jmax25_fertilizer630 <- summary(emmeans(jmax25_lmer, ~spp, at = list(n.ppm = 630)))[1, 2]
 (jmax25_fertilizer630 - jmax25_fertilizer0)/ jmax25_fertilizer0

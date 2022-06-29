@@ -1,0 +1,42 @@
+﻿var,description,units
+block,block number,NA
+rep,replicate of LxN treatment combination,NA
+spp,species,NA
+n.ppm,nitrogen fertilization (added twice per week),ppm N
+shade.cover,light availability  (as percent shade cover),%
+stem.wt,stem mass,g
+leaves.wt,leaf mass,g
+roots.wt,root mass,g
+nod.wt,nodule mass,g
+n.root,root nitrogen content,gN g-1 (%)
+c.root,root carbon content,gC g-1 (%)
+n.stem,stem nitrogen content,gN g-1 (%)
+c.stem,stem carbon content,gC g-1 (%)
+n.leaf,leaf nitrogen content,gN g-1 (%)
+c.leaf,leaf carbon content,gC g-1 (%)
+n.acq,whole plant nitrogen biomass,gN
+root.carbon.mass,root carbon biomass,gC
+n.cost,structural carbon costs to acquire nitrogen,gC gN-1
+nod.root.ratio,root nodule biomass : root biomass,unitless
+chlA,chlorophyll A content,still working out
+chlB,chlorophyll B content,still working out
+Aamb,net photosynthesis rate at ambient CO2,μmol m-2 s-1
+TPU,maximum rate of triose phosphate utilization,μmol m-2 s-1
+Vcmax,maximum Rubisco carboxylation rate (at Tleaf),μmol m-2 s-1
+Jmax,maximum RuBP regeneration rate (at Tleaf),μmol m-2 s-1
+Tleaf,leaf temperature,degC
+TleafK,leaf temperature,K
+vcmax25,maximum Rubisco carboxylation rate (at 25degC),μmol m-2 s-1
+jmax25,maximum RuBP regeneration rate (at 25degC),μmol m-2 s-1
+jv25,ratio of jmax25 to vcmax25,unitless
+marea,leaf mass per leaf area (LMA),g m-2
+nmass,leaf nitrogen content,gN g-1 (%)
+narea,leaf nitrogen per leaf area ,gN m-2
+chlorophyll_area,chlorophyll biomass per leaf area,g m-2
+chlorophyll_mmol.g,moles of chlorophyll per leaf biomass,mmol g-1
+chlorophyll_mmol.m2,moles of chlorophyll per leaf area,mmol m-2
+chlorophyll_mmol.m2_narea,moles of chlorophyll per leaf area per Narea,mmol gN-1
+propN_rubisco,proportion of leaf nitorgen allocated to Rubisco,gN gN-1
+propN_bioenergetics,proportion of leaf nitrogen allocated to bioenergetics,gN gN-1
+propN_lightharvesting,proportion of leaf nitrogen allocated to light harvesting,gN gN-1
+propN_photosynthesis,proportion of leaf nitorgen allocated to photosynthesis,gN gN-1
