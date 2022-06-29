@@ -1,15 +1,18 @@
 # Light x Nitrogen greenhouse experiment data repository
 Repository for data collected and R scripts created from a light-by-nitrogen greenhouse experiment conducted in the [Smith Ecophys Lab](http://www.smithecophyslab.com/) at Texas Tech University. 
 
-Two manuscripts are being written from this experiment. The first manuscript (Perkowski et al., 2021; [link to paper](https://academic.oup.com/jxb/article/72/15/5766/6296480?login=true)) focuses on the effects of light availability, nitrogen availability, and nitrogen acquisition strategy on plant carbon costs to acquire nitrogen and was recently published in *Journal of Experimental Botany*. The second manuscript (Waring & Smith, in prep) focuses on the relative role of soil nitrogen availability and environmental conditions on leaf and whole plant photosynthetic traits.
+Two manuscripts are being written from this experiment. The first manuscript (Perkowski et al., 2021; [link to paper](https://academic.oup.com/jxb/article/72/15/5766/6296480?login=true)) focuses on the effects of light availability, nitrogen availability, and nitrogen acquisition strategy on plant carbon costs to acquire nitrogen and was recently published in *Journal of Experimental Botany*. The second manuscript (Waring, Perkowski, and Smith, in prep) focuses on the role of soil nitrogen availability and light availability on leaf and whole plant photosynthetic traits.
 
-Currently, this repository contains data relevant to Perkowski et al. (2021). Data and associated metadata .csv files can be located in the `data_sheets` folder. This data sheet does not include the direct metrics used in Perkowski et al. (2021); however, calculations for these metrics can be found in the `create_ndemand_metrics.R` file located in the `R_files` folder. Units for each metric are coded out in this file.
+Currently, this repository contains data relevant to Perkowski et al. (2021). Data and associated metadata files can be located in the `data_sheets` folder. This data sheet does not include the direct metrics used in Perkowski et al. (2021); however, calculations for these metrics can be found in the `LxN_ncost_create_metrics.R` file located in the `R_files` folder. Units for each metric are coded out in this file.
 
-The data frame created from `create_ndemand_metrics.R` is directly loaded into a data analysis R file, which can be found in the `ndemand_analyses.R` file. This data frame is also directly loaded into a file containing manuscript plot code, which can be found in the `ndemand_plots.R` file. Both the `ndemand_analyses.R` and `ndemand_plots.R` files can be accessed in the `R_files` folder.
+The data frame created from `LxN_ncost_create_metrics.R` is directly loaded into a data analysis R file, which can be found in the `LxN_ncost_analyses.R` file. This data frame is also directly loaded into a file containing manuscript plot code, which can be found in the `LxN_ncost_plots.R` file. Both the `LxN_ncost_analyses.R` and `LxN_ncost_plots.R` files can be accessed in the `R_files` folder.
 
-NOTE: This repository will be updated with data and metadata from Waring & Smith (in prep) and will be released as a second version on Zenodo.
+#**UPDATE June 29, 2022**
+Data, metadata, and scripts for data analysis and figuremaking are now pushed for the second manuscript investigating impacts of nitrogen fertilization and light availability on leaf and whole plant physiology. Data are included in the `data_sheets` folder as `LxN_physiology_data.csv` and metadata are included as `LxN_physiology_metadata.csv`. Scripts for data analysis and figuremaking are included in the `R_files` folder as `LxN_phys_analyses_plots.R`.
 
-## Zenodo DOI
+Note that there are two additional files in the `data_sheets` folder titled `LxN_ncost_data_withPhys.csv` and `LxN_ncost_metadata_withPhys.csv`. These files compile data for both papers into a single data file.
+
+## Zenodo DOI (current release only includes data for JXB paper)
 [![DOI](https://zenodo.org/badge/304118064.svg)](https://zenodo.org/badge/latestdoi/304118064)
 
 ## Published papers that include these data
