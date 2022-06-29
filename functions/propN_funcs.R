@@ -64,9 +64,8 @@ p_bioenergetics <- function(jmax25, narea){
 # follows equations from Niinemets et al. (1997) and Niinements et al. (1998)
 #
 # Function arguments:
-#   - jmax25     = maximum RuBP regeneration rate, standardized to 25degC
-#                  (μmol m^-2 s^-1)
-#   - nmass      = leaf nitrogen per leaf mass (g N g^-1)
+#   - chlorophyll = chlorophyll content (mmol g^-1)
+#   - nmass       = leaf nitrogen per leaf mass (g N g^-1)
 #
 #
 # Returns:
