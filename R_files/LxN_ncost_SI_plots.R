@@ -98,8 +98,8 @@ bvr.cotton <- ggplot(data = subset(df, spp == "Cotton"),
        y = expression(bold("Total biomass : pot volume (g L"^"-1"~")")),
        color = "Shade cover (%)") +
   pubtheme +
-  guides(fill = FALSE,
-         linetype = FALSE,
+  guides(fill = "none",
+         linetype = "none",
          color = guide_legend(override.aes = list(fill = NA))) +
   facet_grid(.~spp, labeller = labeller(spp = species.label))
 bvr.cotton
