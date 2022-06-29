@@ -8,7 +8,7 @@ library(ggpubr)
 ## Load dataset, create species labels, and colorblind
 ## friendly palette
 ###########################################################
-source("https://raw.githubusercontent.com/eaperkowski/LxN_Greenhouse/main/R_files/create_ndemand_metrics.R")
+source("LxN_ncost_create_metrics.R")
 
 species.label <- c("G. max", "G. hirsutum")
 names(species.label) <- c("Soybean", "Cotton")
@@ -110,12 +110,6 @@ fig1 <- ggarrange(ncost.nppm.cotton, ncost.nppm.soy,
                   font.label = list(size = 18))
 fig1
 
-ggsave("/Users/eaperkowski/git/manuscripts/N_demand_paper/figs/fig1_ncost.png",
-       fig1,
-       height = 7,
-       width = 16,
-       dpi = "retina")
-
 ###########################################################
 ## Whole-plant nitrogen mass
 ###########################################################
@@ -181,12 +175,6 @@ fig2 <- ggarrange(nacq.nppm.cotton, nacq.nppm.soy,
                   labels = NULL, 
                   font.label = list(size = 18))
 fig2
-
-ggsave("/Users/eaperkowski/git/manuscripts/N_demand_paper/figs/fig2.nacq.png",
-       fig2,
-       height = 7,
-       width = 16,
-       dpi = "retina")
 
 ###########################################################
 ## Root carbon mass
@@ -254,11 +242,6 @@ fig3 <- ggarrange(rootcarbon.nppm.cotton, rootcarbon.nppm.soy,
                   font.label = list(size = 18))
 fig3
 
-ggsave("/Users/eaperkowski/git/manuscripts/N_demand_paper/figs/fig3.rootCarbon.png",
-       fig3,
-       height = 7,
-       width = 16,
-       dpi = "retina")
 
 ###########################################################
 ## Root nodule weight
@@ -337,9 +320,3 @@ fig4 <- ggarrange(nod.weight.ppm, nod.root.ppm,
                labels = "AUTO", 
                font.label = list(size = 24))
 fig4
-
-ggsave("/Users/eaperkowski/git/manuscripts/N_demand_paper/figs/fig4.nodwgt.png",
-       fig4,
-       width = 16,
-       height = 7,
-       dpi = "retina")

@@ -8,7 +8,7 @@ library(emmeans)
 ###########################################################
 ## Load data set
 ###########################################################
-source("https://raw.githubusercontent.com/eaperkowski/LxN_Greenhouse/main/R_files/create_ndemand_metrics.R")
+source("LxN_ncost_create_metrics.R")
 
 ###########################################################
 ## Calculate BVR, RMF, and total biomass

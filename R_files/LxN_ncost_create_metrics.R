@@ -6,7 +6,7 @@ library(dplyr)
 ###########################################################
 ## Load light.nitrogen.datasheet
 ###########################################################
-df <- read.csv("https://raw.githubusercontent.com/eaperkowski/LxN_Greenhouse/main/data_sheets/lightnitrogen.datasheet.csv",
+df <- read.csv("../data_sheets/LxN_ncost_data.csv",
                stringsAsFactors = FALSE,
                na.strings = c("", "NA"))
 

@@ -11,7 +11,7 @@ emm_options(opt.digits = FALSE)
 ###########################################################
 # Load data frame produced by "create_ndemand_metrics.R"
 ###########################################################
-source("https://raw.githubusercontent.com/eaperkowski/LxN_Greenhouse/main/R_files/create_ndemand_metrics.R")
+source("LxN_ncost_create_metrics.R")
 
 ###########################################################
 # Remove rows with missing biomass or nitrogen data

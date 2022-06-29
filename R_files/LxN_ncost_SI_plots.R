@@ -8,7 +8,7 @@ library(ggpubr)
 ## Load libraries, create species labels, and colorblind
 ## friendly palette
 ###########################################################
-source("https://raw.githubusercontent.com/eaperkowski/LxN_Greenhouse/main/R_files/create_ndemand_metrics.R")
+source("LxN_ncost_create_metrics.R")
 
 species.label <- c("G. max", "G. hirsutum")
 names(species.label) <- c("Soybean", "Cotton")
