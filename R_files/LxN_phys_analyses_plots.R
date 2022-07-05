@@ -1,4 +1,7 @@
 # Analysis script for the light x N greenhouse experiment physiology paper
+#
+# NOTE: All paths in this script assume the local directory is the R_files 
+# folder of this repository
 
 ###############################################################################
 ## load packages
