@@ -13,7 +13,7 @@ Data, metadata, and scripts for data analysis and figuremaking are now pushed fo
 NOTE: Data and metadata files do not include many of the traits used in the PC&E paper. These traits, and their associated units, are included in the `R_files/LxN_phys_analyses_plots.R` script.
 
 ## Zenodo DOI (current release includes data for JXB paper and pre-submission data for PC&E physiology paper)
-[![DOI](https://zenodo.org/badge/304118064.svg)](https://zenodo.org/badge/latestdoi/304118064)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7013894.svg)](https://doi.org/10.5281/zenodo.7013894)
 
 ## Published papers that include these data
 Perkowski EA, Waring EF, Smith NG. 2021. Root mass carbon costs to acquire nitrogen are determined by nitrogen and light availability in two species with different nitrogen acquisition strategies (A Rogers, Ed.). Journal of Experimental Botany 72: 5766–5776. DOI: [10.1093/jxb/erab253](https://doi.org/10.1093/jxb/erab253)
