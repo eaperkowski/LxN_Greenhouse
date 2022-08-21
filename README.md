@@ -7,10 +7,12 @@ Currently, this repository contains data relevant to Perkowski et al. (2021). Da
 
 The data frame created from `LxN_ncost_create_metrics.R` is directly loaded into a data analysis R file, which can be found in the `LxN_ncost_analyses.R` file. This data frame is also directly loaded into a file containing manuscript plot code, which can be found in the `LxN_ncost_plots.R` file. Both the `LxN_ncost_analyses.R` and `LxN_ncost_plots.R` files can be accessed in the `R_files` folder.
 
-# UPDATE: June 29, 2022
+# UPDATE: August 21, 2022
 Data, metadata, and scripts for data analysis and figuremaking are now pushed for the second manuscript investigating impacts of nitrogen fertilization and light availability on leaf and whole plant physiology. Data are included in the `data_sheets` folder as `LxN_physiology_data.csv` and metadata are included as `LxN_physiology_metadata.csv`. Scripts for data analysis and figuremaking are included in the `R_files` folder as `LxN_phys_analyses_plots.R`.
 
-## Zenodo DOI (current release only includes data for JXB paper)
+NOTE: Metadata file does not include chlorophyll or proportion of N in photosynthesis units. Calculations and units can be found in the `R_files/LxN_phys_analyses_plots.R` script.
+
+## Zenodo DOI (current release includes data for JXB paper and pre-submission data for PC&E physiology paper)
 [![DOI](https://zenodo.org/badge/304118064.svg)](https://zenodo.org/badge/latestdoi/304118064)
 
 ## Published papers that include these data
