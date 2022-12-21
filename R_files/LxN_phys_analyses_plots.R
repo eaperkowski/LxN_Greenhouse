@@ -1,5 +1,6 @@
 # Analysis script for the light x N greenhouse experiment
 # Note that root directory is the R_files folder of the LxN_Greenhouse repository
+# Analysis script for the light x N greenhouse experiment
 
 ## load packages
 library(tidyverse)
@@ -7,13 +8,8 @@ library(lme4)
 library(emmeans)
 library(multcomp)
 library(car)
-# library(gt)
-# library(knitr)
 library(gtable)
 library(grid)
-
-## source proportion N functions
-source('../functions/propN_funcs.R')
 
 ## load data
 data = read.csv('../data_sheets/LxN_phys_data.csv')
@@ -46,112 +42,6 @@ multiplot <- function(..., plotlist=NULL, cols) {
   }
   
 }
-
-## Temperature standardize Vcmax and Jmax
-calc_vcmax_tresp_mult = function(tleaf, tmean, tref){
-  
-  temp = tleaf + 273.15
-  Ha= 71513
-  Hd= 200000
-  adelS= 668.39
-  bdelS= -1.07
-  tmeanK=tmean+273.15
-  trefK=tref+273.15
-  R=8.314
-  kbeg=exp(Ha*(temp-trefK)/(trefK*R*temp))
-  kend=((1+exp((trefK*(adelS+bdelS*tmean)-Hd)/(trefK*R)))/(1+exp((temp*(adelS+bdelS*tmean)-Hd)/(temp*R))))
-  kbeg*kend
-  
-}
-
-calc_jmax_tresp_mult = function(tleaf, tmean, tref){
-  
-  temp = tleaf + 273.15
-  Ha= 49884
-  Hd= 200000
-  adelS= 659.7
-  bdelS= -0.75
-  tmeanK=tmean+273.15
-  trefK=tref+273.15
-  R=8.314
-  kbeg=exp(Ha*(temp-trefK)/(trefK*R*temp))
-  kend=((1+exp((trefK*(adelS+bdelS*tmean)-Hd)/(trefK*R)))/(1+exp((temp*(adelS+bdelS*tmean)-Hd)/(temp*R))))
-  kbeg*kend
-  
-}
-
-data$vcmax25 = data$Vcmax / calc_vcmax_tresp_mult(data$Tleaf, 32, 25)
-data$jmax25 = data$Jmax / calc_jmax_tresp_mult(data$Tleaf, 32, 25)
-
-## Calculate Jmax25 : Vcmax25
-data$jv25 <- data$jmax25 / data$vcmax25
-
-## Change % shade and N fertilization columns from categorical to numeric
-data$shade[data$LightLevel == 'eighty'] <- '80'
-data$shade[data$LightLevel == 'fifty'] <- '50'
-data$shade[data$LightLevel == 'thirty'] <- '30'
-data$shade[data$LightLevel == 'zero'] <- '0'
-
-data$fertilizer[data$N == '0 ppm'] <- '0'
-data$fertilizer[data$N == '70 ppm'] <- '70'
-data$fertilizer[data$N == '210 ppm'] <- '210'
-data$fertilizer[data$N == '630 ppm'] <- '630'
-
-data$fertilizer_cont <- as.numeric(data$fertilizer)
-data$shade_cont <- as.numeric(data$shade)
-
-## Calculate Marea, Nmass, and Narea
-data$marea <- (1/data$sla) * 10000 # lma in g m-2
-data$nmass <- data$n.leaf / 100
-data$narea <- data$marea * data$nmass
-
-## Calculate Vcmax25 per Narea or Jmax25 per Narea
-data$vcmax25_narea = data$vcmax25 / data$narea
-data$jmax25_narea = data$jmax25 / data$narea
-#data$chlorophyll_area_narea = data$chlorophyll_area / data$narea
-
-## Chlorophyll calculations
-data$avg_649 <- (data$A6491 + data$A6491.1 + data$A6491.2)/3
-data$avg_665 <- (data$A6651 + data$A6651.1 + data$A6651.2)/3
-data$chla_ug.ml <- (12.19 * data$avg_665) - (3.45 * data$avg_649) # ug mL-1, from Wellburn (1994)
-data$chlb_ug.ml <- (21.99 * data$avg_665) - (5.32 * data$avg_649) # ug mL-1, from Wellburn (1994)
-data$chla_g.ml <- data$chla_ug.ml / 1000000 # g mL-1
-data$chlb_g.ml <- data$chlb_ug.ml / 1000000 # g mL-1
-data$chla_g <- data$chla_g.ml * 10 # 10 mL of DMSO
-data$chlb_g <- data$chlb_g.ml * 10 # 10 mL of DMSO
-data$chla_g.m2 <- data$chla_g / (data$chl_area / 10000) # convert area to m2
-data$chlb_g.m2 <- data$chlb_g / (data$chl_area / 10000) # convert area to m2
-data$chla_mol.m2 <- data$chla_g.m2 / 893.51 # 893.51 g mol-1 chlorophyll a
-data$chlb_mol.m2 <- data$chlb_g.m2 / 907.47 # 907.47 g mol-1 chlorophyll b
-data$chla_mmol.m2 <- data$chla_mol.m2 * 1000
-data$chlb_mmol.m2 <- data$chla_mol.m2 * 1000
-data$chl_marea <- data$chl_wt / (data$chl_area / 10000) #g m-2
-data$chla_mmol.g <- data$chla_mmol.m2 * (1 / data$chl_marea)
-data$chlb_mmol.g <- data$chlb_mmol.m2 * (1 / data$chl_marea)
-data$chl_mmol.g <- data$chla_mmol.g + data$chlb_mmol.g
-hist(data$chl_mmol.g)
-data$chl_mmol.m2 <- data$chla_mmol.m2 + data$chlb_mmol.m2
-data$chl_mmol.m2_narea <- data$chl_mmol.m2 / data$narea
-
-### Calculate proportion of N in rubisco
-data$propN_rubisco <- p_rubisco(vcmax25 = data$vcmax25, 
-                                narea = data$narea)
-hist(data$propN_rubisco)
-
-### Calculate proportion of N in rubisco
-data$propN_bioenergetics <- p_bioenergetics(jmax25 = data$jmax25, 
-                                narea = data$narea)
-hist(data$propN_bioenergetics)
-
-### Calculate proportion of N in light harvesting
-data$propN_lightharvesting <- p_lightharvesting(chlorophyll = data$chl_mmol.g,
-                                                nmass = data$nmass)
-hist(data$propN_lightharvesting)
-
-### Calculate proportion of N in photosynthesis
-data$propN_photosynthesis = data$propN_rubisco + data$propN_bioenergetics + data$propN_lightharvesting
-hist(data$propN_photosynthesis)
-
 ## leaf N and SLA
 marea_lmer <- lmer(log(marea) ~ spp * shade_cont * fertilizer_cont + (1| block), data = data)
 plot(resid(marea_lmer) ~ fitted(marea_lmer))
@@ -305,6 +195,7 @@ summary(propN_rubisco_lmer)
 Anova(propN_rubisco_lmer)
 test(emtrends(propN_rubisco_lmer, ~ 1, var = 'shade_cont'))
 test(emtrends(propN_rubisco_lmer, ~ 1, var = 'fertilizer_cont'))
+emmeans(propN_rubisco_lmer, ~spp)
 ### recuction with shade
 ### reduction with fertilizer
 
@@ -314,6 +205,7 @@ summary(propN_bioenergetics_lmer)
 Anova(propN_bioenergetics_lmer)
 test(emtrends(propN_bioenergetics_lmer, ~ 1, var = 'shade_cont'))
 test(emtrends(propN_bioenergetics_lmer, ~ 1, var = 'fertilizer_cont'))
+emmeans(propN_bioenergetics_lmer, ~spp)
 ### recuction with shade
 ### reduction with fertilizer
 
@@ -323,6 +215,7 @@ summary(propN_lightharvesting_lmer)
 Anova(propN_lightharvesting_lmer)
 test(emtrends(propN_lightharvesting_lmer, ~ 1, var = 'shade_cont'))
 test(emtrends(propN_lightharvesting_lmer, ~ 1, var = 'fertilizer_cont'))
+emmeans(propN_lightharvesting_lmer, ~spp)
 ### no effect of shade
 ### reduction with fertilizer
 
@@ -344,7 +237,7 @@ test(emtrends(tla_lmer, ~ spp, var = 'shade_cont'))
 cld(emtrends(tla_lmer, ~ spp, var = 'shade_cont'))
 test(emtrends(tla_lmer, ~ 1, var = 'fertilizer_cont'))
 test(emtrends(tla_lmer, ~ 1, var = 'fertilizer_cont',
-             at = list(shade_cont = 0)))
+              at = list(shade_cont = 0)))
 test(emtrends(tla_lmer, ~ 1, var = 'fertilizer_cont',
               at = list(shade_cont = 30)))
 test(emtrends(tla_lmer, ~ 1, var = 'fertilizer_cont',
@@ -403,13 +296,13 @@ jmax25_anova_table <- Anova(jmax25_lmer)
 chlorophyll_mmol.m2_anova_table <- Anova(chlorophyll_mmol.m2_lmer)
 vcmax25_jmax25_chlorophyll_mmol.m2_anova_table <- cbind(vcmax25_anova_table, jmax25_anova_table, chlorophyll_mmol.m2_anova_table)
 vcmax25_jmax25_chlorophyll_mmol.m2_anova_table_sub <- cbind(vcmax25_jmax25_chlorophyll_mmol.m2_anova_table[,2],
-                                           vcmax25_jmax25_chlorophyll_mmol.m2_anova_table[, c(1, 3, 4, 6, 7, 9)])
+                                                            vcmax25_jmax25_chlorophyll_mmol.m2_anova_table[, c(1, 3, 4, 6, 7, 9)])
 colnames(vcmax25_jmax25_chlorophyll_mmol.m2_anova_table_sub) <- c('df', 'χ2', 'P-value', 'χ2', 'P-value', 'χ2', 'P-value')
 rownames(vcmax25_jmax25_chlorophyll_mmol.m2_anova_table_sub) <- c('Species (Sp)', 'Shading (Sh)', 'Fertilizer (F)',
-                                                 'Sp x Sh', 'Sp x F', 'Sh x F', 'Sp x Sh x F')
+                                                                  'Sp x Sh', 'Sp x F', 'Sh x F', 'Sp x Sh x F')
 is.num <- sapply(vcmax25_jmax25_chlorophyll_mmol.m2_anova_table_sub, is.numeric)
 vcmax25_jmax25_chlorophyll_mmol.m2_anova_table_sub[is.num] <- lapply(vcmax25_jmax25_chlorophyll_mmol.m2_anova_table_sub[is.num], 
-                                                    round, 3)
+                                                                     round, 3)
 vcmax25_jmax25_chlorophyll_mmol.m2_anova_table_sub[vcmax25_jmax25_chlorophyll_mmol.m2_anova_table_sub<0.001] <- '<0.001'
 write.csv(vcmax25_jmax25_chlorophyll_mmol.m2_anova_table_sub, 'tables/vcmax25_jmax25_chlorophyll_mmol.m2_anova_table.csv')
 
@@ -418,13 +311,13 @@ propN_bioenergetics_anova_table <- Anova(propN_bioenergetics_lmer)
 propN_lightharvesting_anova_table <- Anova(propN_lightharvesting_lmer)
 propN_rubisco_propN_bioenergetics_propN_lightharvesting_anova_table <- cbind(propN_rubisco_anova_table, propN_bioenergetics_anova_table, propN_lightharvesting_anova_table)
 propN_rubisco_propN_bioenergetics_propN_lightharvesting_anova_table_sub <- cbind(propN_rubisco_propN_bioenergetics_propN_lightharvesting_anova_table[,2],
-                                           propN_rubisco_propN_bioenergetics_propN_lightharvesting_anova_table[, c(1, 3, 4, 6, 7, 9)])
+                                                                                 propN_rubisco_propN_bioenergetics_propN_lightharvesting_anova_table[, c(1, 3, 4, 6, 7, 9)])
 colnames(propN_rubisco_propN_bioenergetics_propN_lightharvesting_anova_table_sub) <- c('df', 'χ2', 'P-value', 'χ2', 'P-value', 'χ2', 'P-value')
 rownames(propN_rubisco_propN_bioenergetics_propN_lightharvesting_anova_table_sub) <- c('Species (Sp)', 'Shading (Sh)', 'Fertilizer (F)',
-                                                 'Sp x Sh', 'Sp x F', 'Sh x F', 'Sp x Sh x F')
+                                                                                       'Sp x Sh', 'Sp x F', 'Sh x F', 'Sp x Sh x F')
 is.num <- sapply(propN_rubisco_propN_bioenergetics_propN_lightharvesting_anova_table_sub, is.numeric)
 propN_rubisco_propN_bioenergetics_propN_lightharvesting_anova_table_sub[is.num] <- lapply(propN_rubisco_propN_bioenergetics_propN_lightharvesting_anova_table_sub[is.num], 
-                                                    round, 3)
+                                                                                          round, 3)
 propN_rubisco_propN_bioenergetics_propN_lightharvesting_anova_table_sub[propN_rubisco_propN_bioenergetics_propN_lightharvesting_anova_table_sub<0.001] <- '<0.001'
 write.csv(propN_rubisco_propN_bioenergetics_propN_lightharvesting_anova_table_sub, 'tables/propN_rubisco_propN_bioenergetics_propN_lightharvesting_anova_table.csv')
 
@@ -432,13 +325,13 @@ tla_anova_table <- Anova(tla_lmer)
 biomass_anova_table <- Anova(biomass_lmer)
 tla_biomass_anova_table <- cbind(tla_anova_table, biomass_anova_table)
 tla_biomass_anova_table_sub <- cbind(tla_biomass_anova_table[,2],
-                                           tla_biomass_anova_table[, c(1, 3, 4, 6)])
+                                     tla_biomass_anova_table[, c(1, 3, 4, 6)])
 colnames(tla_biomass_anova_table_sub) <- c('df', 'χ2', 'P-value', 'χ2', 'P-value')
 rownames(tla_biomass_anova_table_sub) <- c('Species (Sp)', 'Shading (Sh)', 'Fertilizer (F)',
-                                                 'Sp x Sh', 'Sp x F', 'Sh x F', 'Sp x Sh x F')
+                                           'Sp x Sh', 'Sp x F', 'Sh x F', 'Sp x Sh x F')
 is.num <- sapply(tla_biomass_anova_table_sub, is.numeric)
 tla_biomass_anova_table_sub[is.num] <- lapply(tla_biomass_anova_table_sub[is.num], 
-                                                    round, 3)
+                                              round, 3)
 tla_biomass_anova_table_sub[tla_biomass_anova_table_sub<0.001] <- '<0.001'
 write.csv(tla_biomass_anova_table_sub, 'tables/tla_biomass_anova_table.csv')
 
@@ -459,23 +352,23 @@ test(emtrends(marea_lmer, ~spp,
               at = list(shade_cont = 80)))
 
 marea_emtrend_0 <- summary(emtrends(marea_lmer, ~spp, 
-                                  var = 'fertilizer_cont', 
-                                  at = list(shade_cont = 0)))
+                                    var = 'fertilizer_cont', 
+                                    at = list(shade_cont = 0)))
 marea_emtrend_30 <- summary(emtrends(marea_lmer, ~spp, 
-                                  var = 'fertilizer_cont', 
-                                  at = list(shade_cont = 30)))
+                                     var = 'fertilizer_cont', 
+                                     at = list(shade_cont = 30)))
 marea_emtrend_50 <- summary(emtrends(marea_lmer, ~spp, 
-                                  var = 'fertilizer_cont', 
-                                  at = list(shade_cont = 50)))
+                                     var = 'fertilizer_cont', 
+                                     at = list(shade_cont = 50)))
 marea_emtrend_80 <- summary(emtrends(marea_lmer, ~spp, 
-                                  var = 'fertilizer_cont', 
-                                  at = list(shade_cont = 80)))
+                                     var = 'fertilizer_cont', 
+                                     at = list(shade_cont = 80)))
 marea_intercept_0 <- summary(emmeans(marea_lmer, ~spp, 
                                      at = list(fertilizer_cont = 0, 
                                                shade_cont = 0)))
 marea_intercept_30 <- summary(emmeans(marea_lmer, ~spp, 
-                                     at = list(fertilizer_cont = 0, 
-                                               shade_cont = 30)))
+                                      at = list(fertilizer_cont = 0, 
+                                                shade_cont = 30)))
 marea_intercept_50 <- summary(emmeans(marea_lmer, ~spp, 
                                       at = list(fertilizer_cont = 0, 
                                                 shade_cont = 50)))
@@ -505,7 +398,7 @@ marea_func_soybean_80 <- function(x){
 marea_emtrend <- summary(emtrends(marea_lmer, ~spp, 
                                   var = 'fertilizer_cont'))
 marea_intercept <- summary(emmeans(marea_lmer, ~spp, 
-                                      at = list(fertilizer_cont = 0)))
+                                   at = list(fertilizer_cont = 0)))
 
 marea_func_cotton <- function(x){
   exp(marea_emtrend[1, 2] * x + marea_intercept[1, 2])}
@@ -541,7 +434,7 @@ marea_cotton_plot <- ggplot(aes(y = marea, x = fertilizer_cont, color = shade),
   ylim(c(10, 80))
 
 marea_soybean_plot <- ggplot(aes(y = marea, x = fertilizer_cont, color = shade), 
-                            data = subset(data, spp == 'Soybean')) +
+                             data = subset(data, spp == 'Soybean')) +
   theme(legend.position = "right", 
         plot.title = element_text(size = rel(2.2)),
         legend.title = element_text(size = rel(1.5)),
@@ -786,16 +679,16 @@ marea_cotton_plot_g <- ggplotGrob(marea_cotton_plot)
 nmass_cotton_plot_g <- ggplotGrob(nmass_cotton_plot)
 narea_cotton_plot_g <- ggplotGrob(narea_cotton_plot)
 marea_nmass_narea_cotton_g <- rbind(marea_cotton_plot_g, 
-                              nmass_cotton_plot_g, 
-                              narea_cotton_plot_g,
-                              size = "max")
+                                    nmass_cotton_plot_g, 
+                                    narea_cotton_plot_g,
+                                    size = "max")
 marea_soybean_plot_g <- ggplotGrob(marea_soybean_plot)
 nmass_soybean_plot_g <- ggplotGrob(nmass_soybean_plot)
 narea_soybean_plot_g <- ggplotGrob(narea_soybean_plot)
 marea_nmass_narea_soybean_g <- rbind(marea_soybean_plot_g, 
-                              nmass_soybean_plot_g, 
-                              narea_soybean_plot_g,
-                              size = "max")
+                                     nmass_soybean_plot_g, 
+                                     narea_soybean_plot_g,
+                                     size = "max")
 marea_nmass_narea_g <- cbind(marea_nmass_narea_cotton_g, 
                              marea_nmass_narea_soybean_g,
                              size = 'max')
@@ -1169,26 +1062,26 @@ chlorophyll_mmol.m2_soybean_plot <- ggplot(aes(y = chl_mmol.m2, x = fertilizer_c
   labs(color = 'Shade (%)') +
   xlab('Fertilizer (ppm)') +
   ylab(expression('Chl'[area] * ' (mmol m' ^ '-2 ' * ')')) +
-  labs(tag = "(e)") +
+  labs(tag = "(f)") +
   ylim(c(0, 1))
 
 vcmax25_cotton_plot_g <- ggplotGrob(vcmax25_cotton_plot)
 jmax25_cotton_plot_g <- ggplotGrob(jmax25_cotton_plot)
 chlorophyll_mmol.m2_cotton_plot_g <- ggplotGrob(chlorophyll_mmol.m2_cotton_plot)
 vcmax25_jmax25_chlorophyll_mmol.m2_cotton_g <- rbind(vcmax25_cotton_plot_g, 
-                                    jmax25_cotton_plot_g, 
-                                    chlorophyll_mmol.m2_cotton_plot_g,
-                                    size = "max")
+                                                     jmax25_cotton_plot_g, 
+                                                     chlorophyll_mmol.m2_cotton_plot_g,
+                                                     size = "max")
 vcmax25_soybean_plot_g <- ggplotGrob(vcmax25_soybean_plot)
 jmax25_soybean_plot_g <- ggplotGrob(jmax25_soybean_plot)
 chlorophyll_mmol.m2_soybean_plot_g <- ggplotGrob(chlorophyll_mmol.m2_soybean_plot)
 vcmax25_jmax25_chlorophyll_mmol.m2_soybean_g <- rbind(vcmax25_soybean_plot_g, 
-                                     jmax25_soybean_plot_g, 
-                                     chlorophyll_mmol.m2_soybean_plot_g,
-                                     size = "max")
+                                                      jmax25_soybean_plot_g, 
+                                                      chlorophyll_mmol.m2_soybean_plot_g,
+                                                      size = "max")
 vcmax25_jmax25_chlorophyll_mmol.m2_g <- cbind(vcmax25_jmax25_chlorophyll_mmol.m2_cotton_g, 
-                             vcmax25_jmax25_chlorophyll_mmol.m2_soybean_g,
-                             size = 'max')
+                                              vcmax25_jmax25_chlorophyll_mmol.m2_soybean_g,
+                                              size = 'max')
 
 jpeg(filename = "plots/vcmax25_jmax25_chlorophyll_mmol.m2.jpeg", 
      width = 14, height = 14, units = 'in', res = 600)
@@ -1566,19 +1459,19 @@ propN_rubisco_cotton_plot_g <- ggplotGrob(propN_rubisco_cotton_plot)
 propN_bioenergetics_cotton_plot_g <- ggplotGrob(propN_bioenergetics_cotton_plot)
 propN_lightharvesting_cotton_plot_g <- ggplotGrob(propN_lightharvesting_cotton_plot)
 propN_rubisco_propN_bioenergetics_propN_lightharvesting_cotton_g <- rbind(propN_rubisco_cotton_plot_g, 
-                                                     propN_bioenergetics_cotton_plot_g, 
-                                                     propN_lightharvesting_cotton_plot_g,
-                                                     size = "max")
+                                                                          propN_bioenergetics_cotton_plot_g, 
+                                                                          propN_lightharvesting_cotton_plot_g,
+                                                                          size = "max")
 propN_rubisco_soybean_plot_g <- ggplotGrob(propN_rubisco_soybean_plot)
 propN_bioenergetics_soybean_plot_g <- ggplotGrob(propN_bioenergetics_soybean_plot)
 propN_lightharvesting_soybean_plot_g <- ggplotGrob(propN_lightharvesting_soybean_plot)
 propN_rubisco_propN_bioenergetics_propN_lightharvesting_soybean_g <- rbind(propN_rubisco_soybean_plot_g, 
-                                                      propN_bioenergetics_soybean_plot_g, 
-                                                      propN_lightharvesting_soybean_plot_g,
-                                                      size = "max")
+                                                                           propN_bioenergetics_soybean_plot_g, 
+                                                                           propN_lightharvesting_soybean_plot_g,
+                                                                           size = "max")
 propN_rubisco_propN_bioenergetics_propN_lightharvesting_g <- cbind(propN_rubisco_propN_bioenergetics_propN_lightharvesting_cotton_g, 
-                                              propN_rubisco_propN_bioenergetics_propN_lightharvesting_soybean_g,
-                                              size = 'max')
+                                                                   propN_rubisco_propN_bioenergetics_propN_lightharvesting_soybean_g,
+                                                                   size = 'max')
 
 jpeg(filename = "plots/propN_rubisco_propN_bioenergetics_propN_lightharvesting.jpeg", 
      width = 14, height = 14, units = 'in', res = 600)
@@ -1862,19 +1755,6 @@ jmax25_fertilizer0 <- summary(emmeans(jmax25_lmer, ~spp, at = list(fertilizer_co
 jmax25_fertilizer630 <- summary(emmeans(jmax25_lmer, ~spp, at = list(fertilizer_cont = 630)))[1, 2]
 
 (jmax25_fertilizer630 - jmax25_fertilizer0)/ jmax25_fertilizer0
-
-
-
-  
-
-
-
-
-
-
-
-
-
 
 
 
