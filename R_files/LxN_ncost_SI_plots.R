@@ -50,70 +50,72 @@ df$rmf[c(44, 171, 271, 275, 331)] <- NA
 ###########################################################
 # Biomass : volume ratio plots
 ###########################################################        
+bvr.cotton <- lmer(log(bvr) ~ shade.cover * n.ppm + (1 | block), 
+                   data = subset(df, spp == "Cotton"))
+bvr.soy <- lmer(bvr ~ shade.cover * n.ppm + (1 | block), 
+                data = subset(df, spp == "Soybean"))
+
+bvr.soy.regline <- data.frame(emmeans(bvr.soy, ~shade.cover, "n.ppm",
+                                     at = list(n.ppm = seq(0, 630, 5),
+                                               shade.cover = c(0, 30, 50, 80)),
+                                     type = "response")) 
+bvr.cotton.regline <- data.frame(emmeans(bvr.cotton, ~shade.cover, "n.ppm",
+                                      at = list(n.ppm = seq(0, 630, 5),
+                                                shade.cover = c(0, 30, 50, 80)),
+                                      type = "response")) 
+
 bvr.soy <- ggplot(data = subset(df, spp == "Soybean"), 
-                  aes(x = n.ppm,
-                      y = bvr,
-                      color = factor(shade.cover))) +
+                  aes(x = n.ppm, y = bvr)) +
   geom_hline(yintercept = 1, color = "red", size = 2) +
-  geom_jitter(aes(color = factor(shade.cover)), 
-              size = 4.5, alpha = 0.5, width = 23.625) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.740, yend = 7.86E-04*630 + 0.740), color = "#E69F00", size = 3) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.613, yend = 5.87E-04*630 + 0.613), color = "#56B4E9", size = 3) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.529, yend = 4.55E-04*630 + 0.529), color = "#009E73", size = 3) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.402, yend = 2.57E-05*630 + 0.402), 
-               color = "#CC79A7", size = 3, linetype = "dashed") +
+  geom_jitter(aes(fill = factor(shade.cover)), 
+              size = 4.5, alpha = 0.75, width = 20, shape = 21) +
+  geom_smooth(data = bvr.soy.regline,
+              aes(y = emmean, 
+                  color = factor(shade.cover)), 
+              size = 4) +
   scale_color_manual(values = cbbPalette,
-                     labels = c("0", "30",
-                                "50", "80")) +
-  scale_x_continuous(limits = c(-30, 660), breaks = seq(0, 660, 220)) +
+                     labels = c("0", "30", "50", "80")) +
+  scale_fill_manual(values = cbbPalette,
+                     labels = c("0", "30", "50", "80")) +
+  scale_x_continuous(limits = c(-20, 660), breaks = seq(0, 660, 220)) +
   scale_y_continuous(limits = c(0, 2), breaks = seq(0, 2, 0.5)) +
   labs(x = "Nitrogen fertilization (ppm)",
-       y = NULL,
-       color = "Shade cover (%)") +
+       y = NULL, fill = "Shade cover (%)") +
   pubtheme +
-  guides(fill = FALSE,
-         linetype = FALSE,
-         color = guide_legend(override.aes = list(fill = NA))) +
+  guides(color = "none") +
   facet_grid(.~spp, labeller = labeller(spp = species.label))
 bvr.soy
 
 bvr.cotton <- ggplot(data = subset(df, spp == "Cotton"), 
-                     aes(x = n.ppm,
-                         y = bvr,
-                         color = factor(shade.cover))) +
+                  aes(x = n.ppm, y = bvr)) +
   geom_hline(yintercept = 1, color = "red", size = 2) +
-  geom_jitter(aes(color = factor(shade.cover)), 
-              size = 4.5, alpha = 0.5, width = 23.625) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.792, yend = 7.92e-04*630 + 0.792), color = "#E69F00", size = 3) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.566, yend = 3.70e-04*630 + 0.566), color = "#56B4E9", size = 3) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.453, yend = 2.00e-04*630 + 0.453), color = "#009E73", size = 3) +
-  geom_segment(aes(x = 0, xend = 630, y = 0.324, yend = 4.96e-05*630 + 0.324), 
-               color = "#CC79A7", size = 3, linetype = "dashed") +
+  geom_jitter(aes(fill = factor(shade.cover)), 
+              size = 4.5, alpha = 0.75, width = 20, shape = 21) +
+  geom_smooth(data = bvr.cotton.regline,
+              aes(y = response, 
+                  color = factor(shade.cover)), 
+              size = 4) +
   scale_color_manual(values = cbbPalette,
-                     labels = c("0", "30",
-                                "50", "80")) +
-  scale_x_continuous(limits = c(-30, 660), breaks = seq(0, 660, 220)) +
+                     labels = c("0", "30", "50", "80")) +
+  scale_fill_manual(values = cbbPalette,
+                    labels = c("0", "30", "50", "80")) +
   scale_y_continuous(limits = c(0, 2), breaks = seq(0, 2, 0.5)) +
-  labs(x = expression(bold("Nitrogen fertilization (ppm)")),
-       y = expression(bold("Total biomass : pot volume (g L"^"-1"~")")),
-       color = "Shade cover (%)") +
+  scale_x_continuous(limits = c(-20, 660), breaks = seq(0, 660, 220)) +
+  labs(x = "Nitrogen fertilization (ppm)",
+       y = expression(bold("Biomass: pot volume (g L"^"-1"*")")),
+       fill = "Shade cover (%)") +
+  guides(linetype = "none", color = "none") +
   pubtheme +
-  guides(fill = "none",
-         linetype = "none",
-         color = guide_legend(override.aes = list(fill = NA))) +
   facet_grid(.~spp, labeller = labeller(spp = species.label))
 bvr.cotton
 
-q <- ggarrange(bvr.cotton, bvr.soy, nrow = 1, ncol = 2,
-               common.legend = TRUE,
-               legend = "right", align = "hv", 
-               labels = NULL)
-q
-ggsave("/Users/eaperkowski/git/manuscripts/N_demand_paper/figs/figS1.bvr.png",
-       q,
-       width = 16,
-       height = 7,
-       dpi = "retina")
+
+jpeg("../../compile_dissertation/ch2_LxN_Greenhouse/figs/figs1_bvr.jpg",
+     height = 7, width = 16, units = 'in', res = 600)
+ggarrange(bvr.cotton, bvr.soy,
+          nrow = 1, ncol = 2, common.legend = TRUE, legend = "right", 
+          align = "hv")
+dev.off()
 
 ###########################################################
 # Root mass fraction plots

@@ -15,11 +15,24 @@ source("LxN_ncost_create_metrics.R")
 
 species.label <- c("G. max", "G. hirsutum")
 names(species.label) <- c("Soybean", "Cotton")
-cbbPalette <- c("#DDAA33","#BB5566", "#004488", "#555555")
+cbbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#CC79A7")
 
 ###########################################################
 ## Remove outliers per analyses (Bonferroni p<0.05)
 ###########################################################
+pubtheme <- theme_bw() +
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 20, face = "italic"),
+        panel.border = element_rect(size = 3, fill = NA),
+        axis.text = element_text(size = 20),
+        axis.title = element_text(size = 24, face = "bold"),
+        legend.box.background = element_blank(),
+        legend.key = element_rect(fill = NA),
+        legend.background=element_blank(),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 20),
+        axis.ticks.length = unit(0.25, "cm"))
 
 ###########################################################
 # Remove rows with missing biomass or nitrogen data
@@ -56,10 +69,10 @@ ncost.cotton.regline <- data.frame(emmeans(ncost.cotton, ~shade.cover, "n.ppm",
 ncost.nppm.cotton <- ggplot(data = subset(df, spp == "Cotton"), 
                      aes(x = n.ppm, y = n.cost)) +
   geom_jitter(aes(fill = factor(shade.cover)), 
-              size = 3, alpha = 0.75, width = 23.625, shape = 21) +
+              size = 4, alpha = 0.75, width = 20, shape = 21) +
   geom_smooth(data = ncost.cotton.regline,
               aes(y = response, color = factor(shade.cover)), 
-              size = 1.5, se = FALSE) +
+              size = 4, se = FALSE) +
   #geom_ribbon(data = ncost.cotton.regline,
   #            aes(y = response, ymin = lower.CL, ymax = upper.CL, 
   #                fill = factor(shade.cover)), 
@@ -69,25 +82,23 @@ ncost.nppm.cotton <- ggplot(data = subset(df, spp == "Cotton"),
   scale_fill_manual(values = cbbPalette,
                      labels = c("0", "30", "50", "80")) +
   scale_y_continuous(limits = c(0, 8), breaks = seq(0, 8, 2)) +
-  labs(x = "Soil N fertilization (ppm)",
-       y = expression(bold(italic("N")["cost"]*" (gC gN"^"-1"*")")),
-       fill = "Shade cover (%)", color = "Shade cover (%)") +
-  theme_bw(base_size = 18) +
-  theme(axis.title = element_text(face = "bold"),
-        strip.background = element_blank(),
-        strip.text = element_text(size = 20, face = "italic"),
-        panel.border = element_rect(size = 1.25)) +
+  scale_x_continuous(limits = c(-20, 660), breaks = seq(0, 660, 220)) +
+  labs(x = "Nitrogen fertilization (ppm)",
+       y = expression(bold("Carbon cost to acquire nitrogen (gC gN"^"-1"*")")),
+       fill = "Shade cover (%)") +
+  guides(color = "none") +
+  pubtheme +
   facet_grid(.~spp, labeller = labeller(spp = species.label))
 ncost.nppm.cotton
 
 ncost.nppm.soy <- ggplot(data = subset(df, spp == "Soybean"), 
                          aes(x = n.ppm,y = n.cost)) +
   geom_jitter(aes(fill = factor(shade.cover)), 
-              size = 3, alpha = 0.75, width = 23.625, shape = 21) +
+              size = 4, alpha = 0.75, width = 20, shape = 21) +
   geom_smooth(data = ncost.soy.regline,
               aes(y = response, color = factor(shade.cover),
                   linetype = linetype), 
-              size = 1.5, se = FALSE) +
+              size = 4, se = FALSE) +
   #geom_ribbon(data = ncost.soy.regline,
   #            aes(y = response, ymin = lower.CL, ymax = upper.CL, 
   #                fill = factor(shade.cover)), 
@@ -98,23 +109,20 @@ ncost.nppm.soy <- ggplot(data = subset(df, spp == "Soybean"),
                      labels = c("0", "30", "50", "80")) +
   scale_linetype_manual(values = c("dashed", "solid")) +
   scale_y_continuous(limits = c(0, 8), breaks = seq(0, 8, 2)) +
-  labs(x = "Soil N fertilization (ppm)",
+  scale_x_continuous(limits = c(-20, 660), breaks = seq(0, 660, 220)) +
+  labs(x = "Nitrogen fertilization (ppm)",
        y = NULL,
-       fill = "Shade cover (%)", color = "Shade cover (%)") +
-  guides(linetype = "none") +
-  theme_bw(base_size = 18) +
-  theme(axis.title = element_text(face = "bold"),
-        strip.background = element_blank(),
-        strip.text = element_text(size = 20, face = "italic"),
-        panel.border = element_rect(size = 1.25)) +
+       fill = "Shade cover (%)") +
+  guides(linetype = "none", color = "none") +
+  pubtheme +
   facet_grid(.~spp, labeller = labeller(spp = species.label))
 ncost.nppm.soy
 
-# png("../../compile_dissertation/ch2_LxN_Greenhouse/figs/fig1_ncost.png",
-#     height = 5, width = 12, units = "in", res = 600)
-# ggarrange(ncost.nppm.cotton, ncost.nppm.soy, common.legend = TRUE, legend = "right",
-#           align = "hv", font.label = list(size = 18))
-# dev.off()
+png("../corrigendum_figs/fig1_ncost.png",
+    height = 7, width = 16, units = "in", res = 600)
+ggarrange(ncost.nppm.cotton, ncost.nppm.soy, common.legend = TRUE, legend = "right",
+          align = "hv", font.label = list(size = 18))
+dev.off()
 
 ###########################################################
 ## Whole-plant nitrogen mass
@@ -130,6 +138,7 @@ n.acq.cotton <- lmer(log(n.acq) ~ shade.cover * n.ppm + (1 | block),
 test(emtrends(n.acq.cotton, ~shade.cover, "n.ppm", 
               at = list(shade.cover = c(0, 30, 50, 80))))
 
+
 ## Emmean fxns for regression lines + error ribbons
 nacq.soy.regline <- data.frame(emmeans(n.acq.soy, ~shade.cover, "n.ppm",
                                         at = list(n.ppm = seq(0, 630, 5),
@@ -144,10 +153,10 @@ nacq.cotton.regline <- data.frame(emmeans(n.acq.cotton, ~shade.cover, "n.ppm",
 nacq.nppm.cotton <- ggplot(data = subset(df, spp == "Cotton"), 
                            aes(x = n.ppm, y = n.acq)) +
   geom_jitter(aes(fill = factor(shade.cover)), 
-              size = 3, alpha = 0.75, width = 23.625, shape = 21) +
+              size = 4, alpha = 0.75, width = 20, shape = 21) +
   geom_smooth(data = nacq.cotton.regline,
               aes(y = response, color = factor(shade.cover)), 
-              size = 1.5, se = FALSE) +
+              size = 4, se = FALSE) +
   #geom_ribbon(data = ncost.soy.regline,
   #            aes(y = response, ymin = lower.CL, ymax = upper.CL, 
   #                fill = factor(shade.cover)), 
@@ -157,24 +166,22 @@ nacq.nppm.cotton <- ggplot(data = subset(df, spp == "Cotton"),
   scale_fill_manual(values = cbbPalette,
                     labels = c("0", "30", "50", "80")) +
   scale_y_continuous(limits = c(0, 0.16), breaks = seq(0, 0.16, 0.04)) +
-  labs(x = "Soil N fertilization (ppm)",
+  scale_x_continuous(limits = c(-20, 660), breaks = seq(0, 660, 220)) +
+  labs(x = "Nitrogen fertilization (ppm)",
        y = "Whole plant nitrogen biomass (g N)",
-       color = "Shade cover (%)", fill = "Shade cover (%)") +
-  theme_bw(base_size = 18) +
-  theme(axis.title = element_text(face = "bold"),
-        strip.background = element_blank(),
-        strip.text = element_text(size = 20, face = "italic"),
-        panel.border = element_rect(size = 1.25)) +
+       fill = "Shade cover (%)") +
+  pubtheme +
+  guides(color = "none") +
   facet_grid(.~spp, labeller = labeller(spp = species.label))
 nacq.nppm.cotton
 
 nacq.nppm.soy <- ggplot(data = subset(df, spp == "Soybean"), 
                        aes(x = n.ppm, y = n.acq)) +
   geom_jitter(aes(fill = factor(shade.cover)), 
-              size = 3, alpha = 0.75, width = 23.625, shape = 21) +
+              size = 4, alpha = 0.75, width = 20, shape = 21) +
   geom_smooth(data = nacq.soy.regline,
               aes(y = response, color = factor(shade.cover)), 
-              size = 1.5, se = FALSE) +
+              size = 4, se = FALSE) +
   #geom_ribbon(data = nacq.soy.regline,
   #            aes(y = response, ymin = lower.CL, ymax = upper.CL, 
   #                fill = factor(shade.cover)), 
@@ -184,22 +191,20 @@ nacq.nppm.soy <- ggplot(data = subset(df, spp == "Soybean"),
   scale_fill_manual(values = cbbPalette,
                     labels = c("0", "30", "50", "80")) +
   scale_y_continuous(limits = c(0, 0.16), breaks = seq(0, 0.16, 0.04)) +
-  labs(x = "Soil N fertilization (ppm)",
+  scale_x_continuous(limits = c(-20, 660), breaks = seq(0, 660, 220)) +
+  labs(x = "Nitrogen fertilization (ppm)",
        y = NULL,
-       color = "Shade cover (%)", fill = "Shade cover (%)") +
-  theme_bw(base_size = 18) +
-  theme(axis.title = element_text(face = "bold"),
-        strip.background = element_blank(),
-        strip.text = element_text(size = 20, face = "italic"),
-        panel.border = element_rect(size = 1.25)) +
+       fill = "Shade cover (%)") +
+  guides(color = "none") +
+  pubtheme +
   facet_grid(.~spp, labeller = labeller(spp = species.label))
 nacq.nppm.soy
 
-# png("../../compile_dissertation/ch2_LxN_Greenhouse/figs/fig2_nacq.png",
-#     height = 5, width = 12, units = "in", res = 600)
-# ggarrange(nacq.nppm.cotton, nacq.nppm.soy, common.legend = TRUE, legend = "right",
-#           align = "hv", font.label = list(size = 18))
-# dev.off()
+png("../corrigendum_figs/fig2_nacq.png",
+    height = 7, width = 16, units = "in", res = 600)
+ggarrange(nacq.nppm.cotton, nacq.nppm.soy, common.legend = TRUE, 
+          legend = "right", align = "hv", font.label = list(size = 18))
+dev.off()
 
 ###########################################################
 ## Root carbon mass
@@ -233,10 +238,10 @@ cbg.cotton.regline <- data.frame(emmeans(cbg.cotton, ~shade.cover, "n.ppm",
 cbg.nppm.cotton <- ggplot(data = subset(df, spp == "Cotton"), 
                           aes(x = n.ppm, y = root.carbon.mass)) +
   geom_jitter(aes(fill = factor(shade.cover)), 
-              size = 3, alpha = 0.75, width = 23.625, shape = 21) +
+              size = 4, alpha = 0.75, width = 20, shape = 21) +
   geom_smooth(data = cbg.cotton.regline,
               aes(y = response, color = factor(shade.cover), linetype = linetype), 
-              size = 1.5, se = FALSE) +
+              size = 4, se = FALSE) +
   #geom_ribbon(data = ncost.soy.regline,
   #            aes(y = response, ymin = lower.CL, ymax = upper.CL, 
   #                fill = factor(shade.cover)), 
@@ -247,25 +252,22 @@ cbg.nppm.cotton <- ggplot(data = subset(df, spp == "Cotton"),
                     labels = c("0", "30", "50", "80")) +
   scale_linetype_manual(values = c("dashed", "solid")) +
   scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.2)) +
-  labs(x = expression(bold("Soil N fertilization (ppm)")),
+  scale_x_continuous(limits = c(-20, 660), breaks = seq(0, 660, 220)) +
+  labs(x = "Nitrogen fertilization (ppm)",
        y = expression(bold("Root carbon biomass (g C)")),
        color = "Shade cover (%)", fill = "Shade cover (%)") +
-  guides(linetype = "none") +
-  theme_bw(base_size = 18) +
-  theme(axis.title = element_text(face = "bold"),
-        strip.background = element_blank(),
-        strip.text = element_text(size = 20, face = "italic"),
-        panel.border = element_rect(size = 1.25)) +
+  guides(linetype = "none", color = "none") +
+  pubtheme +
   facet_grid(.~spp, labeller = labeller(spp = species.label))
 cbg.nppm.cotton
 
 cbg.nppm.soy <- ggplot(data = subset(df, spp == "Soybean"), 
                               aes(x = n.ppm, y = root.carbon.mass)) +
   geom_jitter(aes(fill = factor(shade.cover)), 
-              size = 3, alpha = 0.75, width = 23.625, shape = 21) +
-  geom_smooth(data = cbg.cotton.regline,
+              size = 4, alpha = 0.75, width = 20, shape = 21) +
+  geom_smooth(data = cbg.soy.regline,
               aes(y = response, color = factor(shade.cover), linetype = linetype), 
-              size = 1.5, se = FALSE) +
+              size = 4, se = FALSE) +
   #geom_ribbon(data = ncost.soy.regline,
   #            aes(y = response, ymin = lower.CL, ymax = upper.CL, 
   #                fill = factor(shade.cover)), 
@@ -276,23 +278,21 @@ cbg.nppm.soy <- ggplot(data = subset(df, spp == "Soybean"),
                     labels = c("0", "30", "50", "80")) +
   scale_linetype_manual(values = c("dashed", "solid")) +
   scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.2)) +
-  labs(x = "Soil N fertilization (ppm)",
+  scale_x_continuous(limits = c(-20, 660), breaks = seq(0, 660, 220)) +
+  labs(x = "Nitrogen fertilization (ppm)",
        y = NULL,
        color = "Shade cover (%)", fill = "Shade cover (%)") +
-  guides(linetype = "none") +
-  theme_bw(base_size = 18) +
-  theme(axis.title = element_text(face = "bold"),
-        strip.background = element_blank(),
-        strip.text = element_text(size = 20, face = "italic"),
-        panel.border = element_rect(size = 1.25)) +
+  guides(linetype = "none", color = "none") +
+  pubtheme  +
   facet_grid(.~spp, labeller = labeller(spp = species.label))
+  
 cbg.nppm.soy
 
-# png("../../compile_dissertation/ch2_LxN_Greenhouse/figs/fig3_rootCarbon.png",
-#     height = 5, width = 12, units = "in", res = 600)
-# ggarrange(cbg.nppm.cotton, cbg.nppm.soy, common.legend = TRUE, legend = "right",
-#           align = "hv", font.label = list(size = 18))
-# dev.off()
+png("../corrigendum_figs/fig3_rootCarbon.png",
+    height = 7, width = 16, units = "in", res = 600)
+ggarrange(cbg.nppm.cotton, cbg.nppm.soy, common.legend = TRUE, 
+          legend = "right", align = "hv", font.label = list(size = 18))
+dev.off()
 
 ###########################################################
 ## Root nodule weight
@@ -313,21 +313,21 @@ nod.wgt.regline <- data.frame(emmeans(nod.wgt, ~shade.cover, "n.ppm",
 nod.weight.ppm <- ggplot(data = subset(df, spp == "Soybean" & nod.wt > 0), 
                            aes(x = n.ppm, y = nod.wt)) +
   geom_jitter(aes(fill = factor(shade.cover)), 
-              size = 3, alpha = 0.75, width = 23.625, shape = 21) +
+              size = 4, alpha = 0.75, width = 20, shape = 21) +
   geom_smooth(data = nod.wgt.regline,
-              aes(y = response, color = factor(shade.cover)), size = 1.5, se = FALSE) +
+              aes(y = response, color = factor(shade.cover)), 
+              size = 4, se = FALSE) +
   scale_color_manual(values = cbbPalette,
                      labels = c("0", "30", "50", "80")) +
   scale_fill_manual(values = cbbPalette,
                      labels = c("0", "30", "50", "80")) +
-  labs(x = "Soil N fertilization (ppm)",
+  scale_y_continuous(limits = c(0, 0.2), breaks = seq(0, 0.2, 0.05)) +
+  scale_x_continuous(limits = c(-20, 660), breaks = seq(0, 660, 220)) +
+  labs(x = "Nitrogen fertilization (ppm)",
        y = "Root nodule biomass (g)",
-       fill = "Shade cover (%)", color = "Shade cover (%)") +
-  theme_bw(base_size = 18) +
-  theme(axis.title = element_text(face = "bold"),
-        strip.background = element_blank(),
-        strip.text = element_text(size = 20, face = "italic"),
-        panel.border = element_rect(size = 1.25)) 
+       fill = "Shade cover (%)") +
+  guides(color = "none") +
+  pubtheme
 nod.weight.ppm
 
 ###########################################################
@@ -347,23 +347,28 @@ nod.root.regline <- data.frame(emmeans(nod.root, ~shade.cover, "n.ppm",
 nod.root.ppm <- ggplot(data = subset(df, spp == "Soybean" & nod.root.ratio > 0),
                        aes(x = n.ppm, y = nod.root.ratio)) +
   geom_jitter(aes(fill = factor(shade.cover)), 
-              size = 3, alpha = 0.75, width = 23.625, shape = 21) +
+              size = 4, width = 20, alpha = 0.75, shape = 21) +
   geom_smooth(data = nod.root.regline,
-              aes(y = response, color = factor(shade.cover)), size = 1.5, se = FALSE) +
+              aes(y = response, color = factor(shade.cover)), 
+              size = 4, se = FALSE) +
   scale_fill_manual(values = cbbPalette,
                     labels = c("0", "30", "50", "80")) +
   scale_color_manual(values = cbbPalette,
                     labels = c("0", "30", "50", "80")) +
-  labs(x = "Soil N fertilization (ppm)",
+  scale_x_continuous(limits = c(-20, 660), breaks = seq(0, 660, 220)) +
+  labs(x = "Nitrogen fertilization (ppm)",
        y = expression(bold("Nodule: root biomass (g g"^"-1"*")")),
        fill = "Shade cover (%)", color = "Shade cover (%)") +
-  theme_bw(base_size = 18) +
-  theme(axis.title = element_text(face = "bold"),
-        axis.title.y = element_text(size = 16),
-        strip.background = element_blank(),
-        strip.text = element_text(size = 20, face = "italic"),
-        panel.border = element_rect(size = 1.25)) 
+  pubtheme
 nod.root.ppm
+
+
+
+png("../corrigendum_figs/fig4_nodwgt.png",
+    height = 6.5, width = 16, units = "in", res = 300)
+ggarrange(nod.weight.ppm, nod.root.ppm, common.legend = TRUE, legend = "right",
+          align = "hv", labels = "AUTO", font.label = list(size = 18))
+dev.off()
 
 # png("../../compile_dissertation/ch2_LxN_Greenhouse/figs/fig4_nodwgt.png",
 #     height = 4.5, width = 12, units = "in", res = 600)
